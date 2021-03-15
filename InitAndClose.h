@@ -1,11 +1,15 @@
 #ifndef _InitAndClose_h
 #define _InitAndClose_h
 #include <iostream>
+#include <cmath>
 #include <string>
+#include <vector>
 #include <SDL.h>
 #include <SDL_image.h>
 #include <SDL_mixer.h>
 using namespace std;
+
+//this file contains functions to initiate and close SDL, renderer, window
 
 const char* windowTitle = "Game";
 
@@ -16,6 +20,7 @@ SDL_Texture* loadTexture(SDL_Renderer* renderer, string path);
 void loadErrorLog();
 void close(SDL_Window*& window, SDL_Renderer*& renderer);
 
+// function contain all the initiation function
 bool init(SDL_Window*& window, SDL_Renderer*& renderer, const int& screenWidth, const int& screenHeight) {
 	bool success = true;
 	if (!initSDL()) {
@@ -31,6 +36,7 @@ bool init(SDL_Window*& window, SDL_Renderer*& renderer, const int& screenWidth, 
 	return success;
 }
 
+//SDL initiation function
 bool initSDL()
 {
 	bool success = true;
@@ -56,6 +62,7 @@ bool initSDL()
 	return success;
 }
 
+//Window initiation function
 bool initWindow(SDL_Window* &window, SDL_Renderer*& renderer, const int& screenWidth, const int& screenHeight) {
 	bool success = true;
 	window = SDL_CreateWindow(windowTitle, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, screenWidth, screenHeight, 0);
@@ -70,6 +77,7 @@ bool initWindow(SDL_Window* &window, SDL_Renderer*& renderer, const int& screenW
 	return true;
 }
 
+//error loading function
 void loadErrorLog()
 {
 	printf("Error: %s\n", SDL_GetError());
@@ -77,6 +85,7 @@ void loadErrorLog()
 	printf("Error: %s\n", Mix_GetError());
 }
 
+//close window and SDL function
 void close(SDL_Window*& window, SDL_Renderer*& renderer)
 {
 	SDL_DestroyRenderer(renderer);
