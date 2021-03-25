@@ -12,6 +12,8 @@
 #include "Render.h"
 using namespace std;
 
+enum backgroundNumber;
+
 //this file contains the game running related functions
 
 bool loadingGameResource(SDL_Renderer* renderer, GameTexture& texture, Mix_Chunk*& bonk);
@@ -19,15 +21,18 @@ void updateArrowRange(vector <Coordinate>& arrowRange, const int& velocity, cons
 void addNewArrow(vector <Coordinate>& arrowRange, const int& screenUnit);
 void renderArrowRange(SDL_Renderer* renderer, const int& screenUnit, vector<Coordinate>& arrowRange, LTexture& arrow, SDL_Rect* arrowSourceRect);
 void freeGamesTexture(GameTexture& texture, Mix_Chunk*& bonk);
+void renderPressedArrow(SDL_Renderer* renderer, const int& screenUnit, SDL_Event& e,
+	vector <Coordinate>& arrowRange, GameTexture& texture, GameRect& rectangles);
+void renderDogeScreen(SDL_Renderer* renderer, SDL_Event& e, GameTexture& texture,
+	GameRect& rectangle, Mix_Chunk* bonk, const int& screenUnit);
 
-
-void game(SDL_Renderer* renderer, const int& screenUnit, const int& velocity, const int& spawnRate) {
+void game(Screen &background, const int& velocity, const int& spawnRate) {
 	const int arrowRangeCol = 4;
 	GameTexture texture;
 	GameRect rectangles;
 	Mix_Chunk* bonk = NULL;
 	vector <Coordinate> arrowRange;
-	if (!loadingGameResource(renderer, texture, bonk)) {
+	if (!loadingGameResource(background.getRenderer(), texture, bonk)) {
 		cout << "Failed to loading game" << endl;
 	}
 	else {
@@ -36,7 +41,7 @@ void game(SDL_Renderer* renderer, const int& screenUnit, const int& velocity, co
 		Uint32 gameTime;
 		unsigned int arrowCount = 0;
 		bool quit = false;
-		rectangles.createSourceRect(screenUnit, texture);
+		rectangles.createSourceRect(background.getScreenUnit(), texture);
 		while (!quit) {
 			if (SDL_PollEvent(&e) != 0) {
 				if (e.type == SDL_QUIT) {
@@ -45,17 +50,17 @@ void game(SDL_Renderer* renderer, const int& screenUnit, const int& velocity, co
 			}
 			gameTime = SDL_GetTicks() - startTime;
 			if (gameTime >= spawnRate * arrowCount) {
-				addNewArrow(arrowRange, screenUnit);
+				addNewArrow(arrowRange, background.getScreenUnit());
 				arrowCount++;
 			}
-			SDL_RenderClear(renderer);
-			texture.background.rectRender(renderer, rectangles.backgroundDstRect, rectangles.backgroundSrcRect);
-			texture.blankArrow.rectRender(renderer, rectangles.blankArrowDstRect, rectangles.blankArrowSrcRect);
-			renderPressedArrow(renderer, screenUnit, e, arrowRange, texture, rectangles);
-			renderDogeScreen(renderer, e, texture, rectangles, bonk, screenUnit);
-			renderArrowRange(renderer, screenUnit, arrowRange, texture.arrow, rectangles.arrowSrcRect);
-			updateArrowRange(arrowRange, velocity, screenUnit);
-			SDL_RenderPresent(renderer);
+			SDL_RenderClear(background.getRenderer());
+			background.renderBackground(GAME);
+			texture.blankArrow.render(background.getRenderer(), rectangles.blankArrowDstRect, rectangles.blankArrowSrcRect);
+			renderPressedArrow(background, e, arrowRange, texture, rectangles);
+			renderDogeScreen(background, e, texture, rectangles, bonk);
+			renderArrowRange(background, arrowRange, texture.arrow, rectangles.arrowSrcRect);
+			updateArrowRange(arrowRange, velocity, background.getScreenUnit());
+			SDL_RenderPresent(background.getRenderer());
 		}
 	}
 	freeGamesTexture(texture, bonk);
