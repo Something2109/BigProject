@@ -7,28 +7,29 @@
 #include <SDL.h>
 #include <SDL_image.h>
 #include <SDL_mixer.h>
+#include "Texture.h"
+#include "FileReadAndWrite.h"
 using namespace std;
 
 //this file contains functions to initiate and close SDL, renderer, window
 
 const char* windowTitle = "Game";
 
-bool init(SDL_Window*& window, SDL_Renderer*& renderer, const int& screenWidth, const int& screenHeight);
+bool init(SDL_Window*& window, Screen &background);
 bool initSDL();
-bool initWindow(SDL_Window*& window, SDL_Renderer*& renderer, const int& screenWidth, const int& screenHeight);
-SDL_Texture* loadTexture(SDL_Renderer* renderer, string path);
+bool initWindow(SDL_Window*& window, Screen &background);
 void loadErrorLog();
-void close(SDL_Window*& window, SDL_Renderer*& renderer);
+void close(SDL_Window*& window, Screen &background);
 
 // function contain all the initiation function
-bool init(SDL_Window*& window, SDL_Renderer*& renderer, const int& screenWidth, const int& screenHeight) {
+bool init(SDL_Window*& window, Screen& background) {
 	bool success = true;
 	if (!initSDL()) {
 		cout << "Failed to initialize SDL" << endl;
 		success = false;
 	}
 	else {
-		if (!initWindow(window, renderer, screenWidth, screenHeight)) {
+		if (!initWindow(window, background)) {
 			cout << "Failed to initialize Window" << endl;
 			success = false;
 		}
@@ -45,6 +46,7 @@ bool initSDL()
 		success = false;
 	}
 	else {
+		cout << "SDL initiated successfully" << endl;
 		int imgFlags = IMG_INIT_PNG;
 		if (!(imgFlags & IMG_INIT_PNG))
 		{
@@ -52,10 +54,22 @@ bool initSDL()
 			success = false;
 		}
 		else {
-			if (Mix_OpenAudio(22050, MIX_DEFAULT_FORMAT, 2, 2048) < 0)
+			cout << "SDL_Image initiated successfully" << endl;
+			if (Mix_OpenAudio(22050, MIX_DEFAULT_FORMAT, 2, 8192) < 0)
 			{
 				loadErrorLog();
 				success = false;
+			}
+			else {
+				cout << "SDL_Mix initiated successfully" << endl;
+				if (TTF_Init() == -1)
+				{
+					loadErrorLog();
+					success = false;
+				}
+				else {
+					cout << "SDL_ttf initiated successfully" << endl;
+				}
 			}
 		}
 	}
@@ -63,8 +77,16 @@ bool initSDL()
 }
 
 //Window initiation function
-bool initWindow(SDL_Window* &window, SDL_Renderer*& renderer, const int& screenWidth, const int& screenHeight) {
+bool initWindow(SDL_Window* &window, Screen &background) {
 	bool success = true;
+	if (!loadSettingFile(background, "Resource")) {
+		background.setScreenUnit(80);
+		cout << "Couldn't open file, using default setting" << endl;
+	}
+	else {
+		cout << "Setting file loaded successfully" << endl;
+	}
+	int screenWidth = background.getScreenWidth(), screenHeight = background.getScreenHeight();
 	window = SDL_CreateWindow(windowTitle, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, screenWidth, screenHeight, 0);
 	if (window == NULL) {
 		loadErrorLog();
@@ -72,29 +94,43 @@ bool initWindow(SDL_Window* &window, SDL_Renderer*& renderer, const int& screenW
 	}
 	else
 	{
-		renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
+		if (!background.createRenderer(window)) {
+			success = false;
+			cout << "Failed to load the renderer" << endl;
+		}
+		else {
+			cout << "Renderer loaded successfully" << endl;
+			if (!background.loadBackground("Resource")) {
+				success = false;
+				cout << "Failed to create background" << endl;
+			}
+			else {
+				cout << "Background created succcessfully" << endl;
+			}
+		}
 	}
-	return true;
-}
-
-//error loading function
-void loadErrorLog()
-{
-	printf("Error: %s\n", SDL_GetError());
-	printf("Error: %s\n", IMG_GetError());
-	printf("Error: %s\n", Mix_GetError());
+	return success;
 }
 
 //close window and SDL function
-void close(SDL_Window*& window, SDL_Renderer*& renderer)
+void closeWindow(SDL_Window*& window, Screen& background)
 {
-	SDL_DestroyRenderer(renderer);
-	renderer = NULL;
+	background.freeScreen();
+	cout << "Background free successfully" << endl;
 	SDL_DestroyWindow(window);
 	window = NULL;
+	cout << "Window closed successfully" << endl;
+}
+
+void quitSDL() {
+	TTF_Quit();
+	cout << "SDL_ttf quit successfully" << endl;
 	Mix_Quit();
+	cout << "SDL_Mix quit successfully" << endl;
 	IMG_Quit();
+	cout << "SDL_IMG quit successfully" << endl;
 	SDL_Quit();
+	cout << "SDL quit successfully" << endl;
 }
 
 #endif
