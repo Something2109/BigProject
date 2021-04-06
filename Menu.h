@@ -10,24 +10,35 @@
 #include <SDL_ttf.h>
 #include "InitAndClose.h"
 #include "Texture.h"
-#include "Structs.h"
-#include "Render.h"
+#include "Background.h"
+#include "Game.h"
 using namespace std;
 
-void menu(Screen& background) {
-	SDL_Event e;
-	bool quit = false;
-	while (!quit) {
-		if (SDL_PollEvent(&e) != 0) {
-			if (e.type == SDL_QUIT) {
-				quit = true;
-			}
-		}
-		SDL_RenderClear(background.getRenderer());
-		background.renderBackground(MENU);
-		background.renderColorStrip(MENU);
-		SDL_RenderPresent(background.getRenderer());
-	}
-}
+class MenuTexture : private Screen {
+
+	LTexture* menuButton = NULL;
+	SDL_Rect* menuDstRect = NULL;
+	int menuChoose = -1;
+	bool buttonClick = false;
+
+public:
+
+	void createMenuRect();
+
+	bool loadMenuTexture(Screen& screen, const string& path);
+
+	void eventHandle(Event& event);
+
+	void renderButton();
+
+	void renderClickedButton(int &buttonType);
+
+	void changeScreen(Screen& screen, Background& background, Event& event, vector<Music>& musicList, bool& quit);
+
+	void freeMenu();
+
+};
+
+void menu(Screen& screen, Background& background, Event& event, vector<Music>&musicList);
 
 #endif

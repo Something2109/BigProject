@@ -8,30 +8,8 @@
 #include <SDL_image.h>
 #include <SDL_mixer.h>
 #include <SDL_ttf.h>
+#include "ErrorAndEnum.h"
 using namespace std;
-
-enum backgroundNumber {
-	MENU,
-	CHOOSE_MUSIC,
-	GAME,
-	TOTAL_BACKGROUND,
-};
-
-enum colorStripNumber {
-	ORANGE,
-	GREEN,
-	PURPLE,
-	TOTAL_COLOR_STRIP,
-};
-
-//error loading function
-void loadErrorLog()
-{
-	printf("Error: %s\n", SDL_GetError());
-	printf("Error: %s\n", IMG_GetError());
-	printf("Error: %s\n", Mix_GetError());
-	printf("Error: %s\n", TTF_GetError());
-}
 
 //this file contains functions to use textures more easily
 
@@ -41,32 +19,21 @@ class Coordinate {
 	int y;
 
 public:
-	Coordinate(int _x, int _y) {
-		x = _x;
-		y = _y;
-	}
+
+	//Create coordinate
+	Coordinate(int _x, int _y);
 
 	//create arrow rectangle to render
-	SDL_Rect getRect(const int& width, const int& height) {
-		SDL_Rect rect = { x, y, width, height };
-		return rect;
-	}
+	SDL_Rect getRect(const int& width, const int& height);
 
 	//arrow moving 
-	void arrowMove(const int& velocity) {
-			y -= velocity;
-	}
-
-	//get the height coordinate of the arrow
-	int getY() {
-		return y;
-	}
+	void arrowMove(const int& velocity);
 
 	//get arrow position 
-	int getArrowCol(const int& screenUnit) {
-		int arrowCol = (x / screenUnit - 1) / 2;
-		return arrowCol;
-	}
+	int getArrowCol(const int& screenUnit);
+
+	//get the height coordinate of the arrow
+	int getY();
 };
 
 //texture class handler
@@ -80,227 +47,131 @@ class LTexture {
 public:
 
 	//create a texture
-	LTexture() {
-		mTexture = NULL;
-		mWidth = 0;
-		mHeight = 0;
-	}
+	LTexture();
 
 	//free the texture
-	void free() {
-		if (mTexture != NULL) {
-			SDL_DestroyTexture(mTexture);
-			mTexture = NULL;
-			mWidth = 0;
-			mHeight = 0;
-		}
-	}
+	void free();
 
 	//load resource to texture
-	bool loadFromFile(SDL_Renderer* renderer, string path) {
-		free();
-		bool success = true;
-		SDL_Texture* newTexture = NULL;
-		SDL_Surface* loadedImage = IMG_Load(path.c_str());
-		if (loadedImage == NULL) {
-			loadErrorLog();
-			success = false;
-		}
-		else {
-			newTexture = SDL_CreateTextureFromSurface(renderer, loadedImage);
-			if (newTexture == NULL) {
-				loadErrorLog();
-				success = false;
-			}
-			else {
-				mWidth = loadedImage->w;
-				mHeight = loadedImage->h;
-			}
-			SDL_FreeSurface(loadedImage);
-		}
-		mTexture = newTexture;
-		return success;
-	}
+	bool loadFromFile(SDL_Renderer* renderer, string path);
+
+	//load text from font
+	bool loadFromRenderedText(SDL_Renderer* renderer, string textureText, SDL_Color textColor, TTF_Font* font);
+
+	void setColor(Uint8 red, Uint8 green, Uint8 blue); 
 
 	//render part of a texture (in the type of a rectangle) to the screen with given rectangle
-	void render(SDL_Renderer* renderer, SDL_Rect* renderRect, SDL_Rect* sourceRect) {
-		if (sourceRect == NULL) {
-			SDL_Rect render = { 0, 0, mWidth, mHeight };
-			sourceRect = &render;
-		}
-		if (mTexture != NULL) {
-			SDL_RenderCopy(renderer, mTexture, sourceRect, renderRect);
-		}
-	}
+	void render(SDL_Renderer* renderer, SDL_Rect* renderRect, SDL_Rect* sourceRect);
 
 	//Destructor
-	~LTexture() {
-		free();
-	}
+	~LTexture();
 
 	//get the width of the loaded picture
-	int getWidth() {
-		return mWidth;
-	}
+	int getWidth();
 
 	//get the height of the loaded picture
-	int getHeight() {
-		return mHeight;
-	}
+	int getHeight();
 };
 
-
-//renderer and background class handler
+//renderer
 class Screen {
+protected:
 
 	//renderer and the related parameters
+	SDL_Window* window = NULL;
 	SDL_Renderer* renderer = NULL;
+	const char* windowTitle = "Game";
 	int screenUnit = 0,
 		screenWidth = 0,
 		screenHeight = 0;
 
-	//background and the related parameters
-	LTexture background;
-	int backgroundUnit = 0;
-	SDL_Rect* backgroundSrcRect = NULL;
-	SDL_Rect* backgroundDstRect = NULL;
-
-	//color strips and the related parameters
-	LTexture colorStrip[TOTAL_COLOR_STRIP];
-	SDL_Rect* colorStripSrcRect = NULL;
-	SDL_Rect* colorStripDstRect = NULL;
-	int colorStripVelo = screenUnit / 20;
-
 public:
+
 	//set the renderer parameters
-	void setScreenUnit(int number) {
-		screenUnit = number;
-		screenWidth = screenUnit * 16;
-		screenHeight = screenUnit * 9;
-	}
+	void setScreenUnit(int number);
 
-	//get renderer pointer
-	SDL_Renderer* getRenderer() {
-		return renderer;
-	}
-
-	//get the renderer parameters
-	int getScreenUnit() {
-		return screenUnit;
-	}
-
-	int getScreenWidth() {
-		return screenWidth;
-	}
-
-	int getScreenHeight() {
-		return screenHeight;
-	}
+	//create window
+	bool createWindow();
 
 	//create renderer
-	bool createRenderer(SDL_Window*& window) {
-		renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
-		if (renderer == NULL) {
-			return false;
-		}
-		return true;
-	}
+	bool createRenderer();
 
-	//create background and its parameters
-	void createBackgroundRect();
+	void clearRenderer();
 
-	//load background
-	bool loadBackground(const string& path) {
-		bool success = true;
-		if (!background.loadFromFile(renderer, path + "/Picture/background.png")) {
-			success = false;
-		}
-		if (!colorStrip[ORANGE].loadFromFile(renderer, path + "/Picture/ColorStripOrange.png")) {
-			success = false;
-		}
-		if (!colorStrip[GREEN].loadFromFile(renderer, path + "/Picture/ColorStripGreen.png")) {
-			success = false;
-		}
-		if (!colorStrip[PURPLE].loadFromFile(renderer, path + "/Picture/ColorStripPurple.png")) {
-			success = false;
-		}
-		createBackgroundRect();
-		return success;
-	}
+	void presentRenderer();
 
-	//color strip moving function
-	void moveColorStrip() {
-		colorStripDstRect[MENU].y = (colorStripDstRect[MENU].y + colorStripVelo) % screenHeight;
-		colorStripDstRect[CHOOSE_MUSIC].y = (colorStripDstRect[CHOOSE_MUSIC].y + colorStripVelo) % screenHeight;
-		colorStripDstRect[GAME].y = (colorStripDstRect[GAME].y + colorStripVelo) % screenHeight;
-	}
-
-	//color strip render function
-	void renderColorStrip(int backgroundType);
-
-	//background picture moving function
-	void moveBackground(int original, int move) {
-		SDL_Rect transition = backgroundSrcRect[original];
-		int xVelo = (backgroundSrcRect[move].x - backgroundSrcRect[original].x) * 8 / screenUnit / 5,
-			yVelo = (backgroundSrcRect[move].y - backgroundSrcRect[original].y) * 8 / screenUnit / 5,
-			wVelo = (backgroundSrcRect[move].w - backgroundSrcRect[original].w) * 8 / screenUnit / 5,
-			hVelo = (backgroundSrcRect[move].h - backgroundSrcRect[original].h) * 8 / screenUnit / 5;
-		while (!SDL_RectEquals(&transition, &backgroundSrcRect[move])) {
-			SDL_RenderClear(renderer);
-			transition.x += xVelo;
-			transition.y += yVelo;
-			transition.w += wVelo;
-			transition.h += hVelo;
-			if (wVelo < 0 && transition.w < backgroundSrcRect[move].w) {
-				transition = backgroundSrcRect[move];
-			}
-			if (wVelo > 0 && transition.w > backgroundSrcRect[move].w) {
-				transition = backgroundSrcRect[move];
-			}
-			if (hVelo < 0 && transition.h < backgroundSrcRect[move].h) {
-				transition = backgroundSrcRect[move];
-			}
-			if (hVelo > 0 && transition.h > backgroundSrcRect[move].h) {
-				transition = backgroundSrcRect[move];
-			}
-			background.render(renderer, &backgroundDstRect[GAME], &transition);
-			renderColorStrip(move);
-			SDL_RenderPresent(renderer);
-		}
-	}
-
-	//background render function
-	void renderBackground(int backgroundType) {
-		background.render(renderer, &backgroundDstRect[backgroundType], &backgroundSrcRect[backgroundType]);
-	}
-	
 	//free the screen
-	void freeScreen() {
-		background.free();
-		for (int i = 0; i < TOTAL_BACKGROUND; i++) {
-			colorStrip[i].free();
-		}
-		delete[] backgroundSrcRect;
-		delete[] backgroundDstRect;
-		delete[] colorStripSrcRect;
-		delete[] colorStripDstRect;
-		backgroundUnit = 0;
-		backgroundSrcRect = NULL;
-		backgroundDstRect = NULL;
-		colorStripSrcRect = NULL;
-		colorStripDstRect = NULL;
-		SDL_DestroyRenderer(renderer);
-		renderer = NULL;
-	}
+	void freeScreen();
 
-	//screen destructor
-	~Screen() {
-		freeScreen();
-	}
+	//get renderer pointer
+	SDL_Renderer* getRenderer();
+
+	//get the renderer parameters
+	const char* getWindowTitle();
+
+	int getScreenUnit();
+
+	int getScreenWidth();
+
+	int getScreenHeight();
+
+};
+
+class Music {
+
+	Mix_Music* source = NULL;
+	string name;
+	string singer;
+	Uint32 duration = 0;
+	int spawnRate = 0;
+	int velocity = 0;
+
+public:
+
+	//load music from file
+	bool loadFromFile(string path);
+
+	//load music infomation
+	void loadMusicInfo(string& _name, string& _singer, Uint32& _duration, int& _spawnRate, int& _velocity, const int& screenUnit);
+
+	void playMusic(int loop);
+
+	void freeMusicLoad();
+
+	void freeMusic();
+
+	~Music();
+
+	string getMusicName();
+
+	Uint32 getDuration();
+
+	int getSpawnRate();
+
+	int getVelocity();
+};
+
+class Event {
+	SDL_Event e;
+	SDL_Point mousePos;
+	Uint32 mouseButton = 0;
+	const Uint8* keyState = NULL;
+	Uint8* keyControl = NULL;
+
+public:
+	void updateEvent();
+
+	bool quit();
+
+	SDL_Event getEvent();
+
+	const Uint8* getKeyState();
+	
+	SDL_Point getMousePos();
+
+	Uint32 getMouseButton();
 };
 
 
-
-extern enum backgroundNumber;
 
 #endif
