@@ -1,2 +1,5 @@
 ScreenUnit 80
-LeftArrow 
+LeftArrow 1073741904 80
+UpArrow 1073741906 82
+DownArrow 1073741905 81
+RightArrow 1073741903 79
