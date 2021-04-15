@@ -10,85 +10,125 @@
 using namespace std;
 
 void menu(Screen& screen, Background& background, Event& event, vector<Music> &musicList) {
-	SDL_Renderer* renderer = screen.getRenderer();
-	MenuTexture texture;
+	MenuTexture texture(screen);
 	bool quitMenu = false;
 
-	if (texture.loadMenuTexture(screen, "Resource")) {
+	if (texture.load("Resource")) {
 		while (!quitMenu) {
 			event.updateEvent();
-			quitMenu = event.quit();
 
 			//cout << "Menu loop" << endl;
-			SDL_RenderClear(screen.getRenderer());
+			screen.clearRenderer();
 			texture.eventHandle(event);
-			background.renderBackground(MENU);
-			background.renderColorStrip(MENU);
-			texture.renderButton();
+			background.renderBackground(BACKGROUND::MENU);
+			background.renderColorStrip(BACKGROUND::MENU);
+			texture.render();
 			texture.changeScreen(screen, background, event, musicList, quitMenu);
-			SDL_RenderPresent(screen.getRenderer());
+			screen.presentRenderer();
+
+			quitMenu = quitMenu || event.quit();
 		}
 	}
 }
 
-bool MenuTexture::loadMenuTexture(Screen& screen, const string& path) {
+
+
+//MenuTexture
+
+//constructor
+MenuTexture::MenuTexture(Screen& screen)
+{
+	setRenderer(screen);
+}
+
+//basic function
+
+bool MenuTexture::load(const string& path) {
 	bool success = true;
-	renderer = screen.getRenderer();
-	setScreenUnit(screen.getScreenUnit());
 	SDL_Color textColor = { 255, 213, 8 };
 
-	menuButton = new LTexture[3];
-	if (!menuButton[PLAY].loadFromFile(renderer, path + "/Picture/playGameButton.png")) {
-		loadErrorLog();
-		success = false;
-	}
-	else {
-		if (!menuButton[SETTING].loadFromFile(renderer, path + "/Picture/settingButton.png")) {
+	menuButton = new LButton[static_cast<int> (MENU::TOTAL)];
+	for (int type = 0; type < static_cast<int> (MENU::TOTAL); type++) {
+		string buttonPath = path;
+		switch (static_cast<MENU> (type)) {
+			case MENU::PLAY: {
+				buttonPath += "/Picture/playGameButton.png";
+				break;
+			}
+			case MENU::SETTING: {
+				buttonPath += "/Picture/settingButton.png";
+				break;
+			}
+			case MENU::EXIT: {
+				buttonPath += "/Picture/exitButton.png";
+				break;
+			}
+		}
+		if (!menuButton[type].loadFromFile(renderer, buttonPath)) {
 			cout << "Log [" << SDL_GetTicks() << "]: ";
 			loadErrorLog();
 			success = false;
+			break;
 		}
-		else {
-			if (!menuButton[EXIT].loadFromFile(renderer, path + "/Picture/exitButton.png")) {
-				cout << "Log [" << SDL_GetTicks() << "]: ";
-				loadErrorLog();
-				success = false;
-			}
-			else {
-				createMenuRect();
-				cout << "Log [" << SDL_GetTicks() << "]: " << "Menu texture created successfully" << endl;
-			}
-		}
+	}
+	if (success) {
+		createRect();
+		cout << "Log [" << SDL_GetTicks() << "]: " << "Menu texture created successfully" << endl;
 	}
 	return success;
 }
 
+void MenuTexture::render() {
+	for (int type = 0; type < static_cast<int> (MENU::TOTAL); type++) {
+		menuButton[type].render(renderer, &menuDstRect[type], NULL);
+	}
+}
+
+void MenuTexture::free() {
+	for (int type = 0; type < static_cast<int> (MENU::TOTAL); type++) {
+		menuButton[type].free();
+	}
+	delete[] menuButton;
+	delete[] menuDstRect;
+	menuDstRect = NULL;
+	renderer = NULL;
+	setScreenUnit(0);
+	cout << "Log [" << SDL_GetTicks() << "]: " << "Menu Texture freed successfully" << endl;
+}
+
+//event function
+
 void MenuTexture::eventHandle(Event& event) {
 	SDL_Point mousePos = event.getMousePos();
-	SDL_Event e = event.getEvent();
-	const Uint8* keyState = event.getKeyState();
 
-	if (SDL_PointInRect(&mousePos, &menuDstRect[MENU])) {
-		menuChoose = 0;
-	}
-	else {
-		if (SDL_PointInRect(&mousePos, &menuDstRect[SETTING])) {
-			menuChoose = 1;
-		}
-		else {
-			if (SDL_PointInRect(&mousePos, &menuDstRect[EXIT])) {
-				menuChoose = 2;
-			}
-			else {
-				menuChoose = -1;
-			}
-		}
-	}
 	if (event.getMouseButton() != 0) {
 		buttonClick = true;
 	}
 	else {
 		buttonClick = false;
+	}
+
+	if (SDL_PointInRect(&mousePos, &menuDstRect[static_cast<int> (MENU::PLAY)])) {
+		menuChoose = MENU::PLAY;
+	}
+	else {
+		if (SDL_PointInRect(&mousePos, &menuDstRect[static_cast<int> (MENU::SETTING)])) {
+			menuChoose = MENU::SETTING;
+		}
+		else {
+			if (SDL_PointInRect(&mousePos, &menuDstRect[static_cast<int> (MENU::EXIT)])) {
+				menuChoose = MENU::EXIT;
+			}
+			else {
+				menuChoose = MENU::NOT_CHOOSE;
+			}
+		}
+	}
+	if (menuChoose != MENU::NOT_CHOOSE) {
+		menuButton[static_cast<int> (menuChoose)].hovered();
+		if (event.getMouseButton() != 0) {
+			menuButton[static_cast<int> (menuChoose)].clicked();
+		}
 	}
 	/*if (menuChoose == -1) {
 		if (e.key.keysym.sym == SDLK_DOWN) {
@@ -111,95 +151,22 @@ void MenuTexture::eventHandle(Event& event) {
 	}*/
 }
 
-void MenuTexture::renderClickedButton(int &buttonType) {
-	int clicked = screenUnit / 10;
-	SDL_Rect clickedButton;
-
-	menuButton[buttonType].setColor(255, 191, 255);
-	clickedButton = { menuDstRect[buttonType].x + clicked, menuDstRect[buttonType].y + clicked,
-				menuDstRect[buttonType].w - clicked, menuDstRect[buttonType].h - clicked };
-	menuButton[buttonType].render(renderer, &clickedButton, NULL);
-	menuButton[buttonType].setColor(255, 255, 255);
-}
-
-void MenuTexture::renderButton() {
-	switch (menuChoose)
-	{
-	case PLAY: {
-		if (buttonClick) {
-			renderClickedButton(menuChoose);
-		}
-		else {
-			menuButton[menuChoose].setColor(255, 191, 255);
-			menuButton[menuChoose].render(renderer, &menuDstRect[menuChoose], NULL);
-			menuButton[menuChoose].setColor(255, 255, 255);
-		}
-		menuButton[SETTING].render(renderer, &menuDstRect[SETTING], NULL);
-		menuButton[EXIT].render(renderer, &menuDstRect[EXIT], NULL);
-		break;
-	}
-	case SETTING: {
-		if (buttonClick) {
-			renderClickedButton(menuChoose);
-		}
-		else {
-			menuButton[menuChoose].setColor(255, 191, 255);
-			menuButton[menuChoose].render(renderer, &menuDstRect[menuChoose], NULL);
-			menuButton[menuChoose].setColor(255, 255, 255);
-		}
-		menuButton[PLAY].render(renderer, &menuDstRect[PLAY], NULL);
-		menuButton[EXIT].render(renderer, &menuDstRect[EXIT], NULL);
-		break;
-	}
-	case EXIT: {
-		if (buttonClick) {
-			renderClickedButton(menuChoose);
-		}
-		else {
-			menuButton[menuChoose].setColor(255, 191, 255);
-			menuButton[menuChoose].render(renderer, &menuDstRect[menuChoose], NULL);
-			menuButton[menuChoose].setColor(255, 255, 255);
-		}
-		menuButton[PLAY].render(renderer, &menuDstRect[PLAY], NULL);
-		menuButton[SETTING].render(renderer, &menuDstRect[SETTING], NULL);
-		break;
-	}
-	default: {
-		menuButton[PLAY].render(renderer, &menuDstRect[PLAY], NULL);
-		menuButton[SETTING].render(renderer, &menuDstRect[SETTING], NULL);
-		menuButton[EXIT].render(renderer, &menuDstRect[EXIT], NULL);
-	}
-	}
-}
-
 void MenuTexture::changeScreen(Screen &screen, Background &background, Event &event, vector<Music> &musicList, bool &quit) {
 	if (buttonClick) {
 		switch (menuChoose) {
-		case PLAY: {
-			background.moveBackground(MENU, GAME);
-			game(screen, background, event, musicList[0]);
+		case MENU::PLAY: {
+			background.moveBackground(BACKGROUND::MENU, BACKGROUND::GAME);
+			game(screen, background, event, musicList[1]);
 			//background.moveBackground(CHOOSE_MUSIC, GAME);
-			background.moveBackground(GAME, MENU);
+			if (!event.quit()) {
+				background.moveBackground(BACKGROUND::GAME, BACKGROUND::MENU);
+			}
 			break;
 		}
-		case EXIT: {
+		case MENU::EXIT: {
 			quit = true;
 			break;
 		}
 		}
 	}
-}
-
-void MenuTexture::freeMenu() {
-	for (int i = 0; i < TOTAL_ARROW; i++) {
-		menuButton[PLAY].free();
-		menuButton[SETTING].free();
-		menuButton[EXIT].free();
-	}
-	delete[] menuButton;
-	delete[] menuDstRect;
-	menuDstRect = NULL;
-	renderer = NULL;
-	setScreenUnit(0);
-	cout << "Log [" << SDL_GetTicks() << "]: " << "Menu Texture freed successfully" << endl;
 }

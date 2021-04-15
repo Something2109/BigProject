@@ -9,8 +9,9 @@
 #include <SDL_mixer.h>
 #include <SDL_ttf.h>
 #include "InitAndClose.h"
-#include "Texture.h"
+#include "Utility.h"
 #include "Background.h"
+#include "Point.h"
 using namespace std;
 
 //this file contains the game running related functions
@@ -20,12 +21,11 @@ class ArrowTexture: private Screen{
 		blankArrow,
 		pressedArrow;
 
-	vector <Coordinate> arrowRange;
-	Uint32 startTime = 0;
+	vector <SDL_Point> arrowRange;
+	Uint32 startGameTime = 0;
 	Uint32 gameTime = 0;
-	Uint32 endTime = 0;
+	Uint32 spawnDuration = 0;
 	unsigned int arrowCount = 0;
-	int point = 0;
 
 	SDL_Rect* blankArrowDstRect = NULL;
 	SDL_Rect* arrowSrcRect = NULL;
@@ -33,27 +33,35 @@ class ArrowTexture: private Screen{
 
 public:
 
-	void createArrowRect();
+	//constructor
 
-	//load all the texture from source
-	bool loadTexture(Screen& background, const string& path);
+	ArrowTexture(Screen& screen);
 
+	//basic functions
+
+	bool load(const string& path);
+
+	void render(Event& event, Point& point);
+
+	void free();
+
+	//Arrow spawning function
+	
 	void setTimeline(Music& song);
 
-	void addNewArrow(Music &song);
+	void addNewArrow(Music &song, Point &point);
 
-	bool continueGame(Event& event);
+	void scoreCheck(int& keyType, Point& point);
 
-	void scoreCheck(int& keyType);
+	void updateArrowRange(Music& song, Point& point);
 
-	void updateArrowRange(const int& velocity);
+	//render function
 
-	void renderPressedArrow(Event& event);
+	void createRect();
+
+	void renderPressedArrow(Event& event, Point& point);
 
 	void renderArrowRange();
-
-	//free all the texture
-	void freeArrowTexture();
 
 };
 
@@ -68,24 +76,36 @@ class DogeTexture : private Screen {
 	SDL_Rect* cheemsDstRect = NULL;
 
 public:
-	void createDogeRect();
-
-	bool loadTexture(Screen& background, const string& path);
 	
-	void playBonkSound();
+	//constructor
 
-	void renderDogeScreen(Event& event);
+	DogeTexture(Screen& screen);
+	
+	//basic functions
 
-	//free all the texture
-	void freeDogeTexture();
+	bool load(const string& path);
+
+	void render(Event& event);
+
+	void free();
+
+	//play sound
+
+	void playBonkSound();	
+
+	//render function
+
+	void createRect();
+
 };
 
 //main game function
 void game(Screen& screen, Background& background, Event& event, Music& song);
 
 //loading resources
-bool loadingGameResource(Screen& screen, ArrowTexture& texture, DogeTexture& dogeTexture, Music& song);
 
-void freeGamesTexture(ArrowTexture& texture, DogeTexture& dogeTexture, Music& song);
+bool loadingGameResource(Screen& screen, ArrowTexture& texture, DogeTexture& dogeTexture, Music& song, Point& point);
+
+void freeGamesTexture(ArrowTexture& texture, DogeTexture& dogeTexture, Music& song, Point& point);
 
 #endif

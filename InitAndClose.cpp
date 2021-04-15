@@ -7,20 +7,19 @@
 #include <SDL_mixer.h>
 #include <SDL_ttf.h>
 #include "InitAndClose.h"
-#include "Texture.h"
 using namespace std;
 
 //this file contains functions to initiate and close SDL, renderer, window
 
 // function contain all the initiation function
-bool init(Screen& screen) {
+bool init(Screen& screen, Event& event) {
 	bool success = true;
 	if (!initSDL()) {
 		cout << "Log [" << SDL_GetTicks() << "]: " << "Failed to initialize SDL" << endl;
 		success = false;
 	}
 	else {
-		if (!initWindow(screen)) {
+		if (!initWindow(screen, event)) {
 			cout << "Log [" << SDL_GetTicks() << "]: " << "Failed to initialize Window" << endl;
 			success = false;
 		}
@@ -68,37 +67,32 @@ bool initSDL()
 }
 
 //Window initiation function
-bool initWindow(Screen& screen) {
+bool initWindow(Screen& screen, Event& event) {
 	bool success = true;
-	if (!loadSettingFile(screen, "Resource")) {
-		screen.setScreenUnit(80);
-		cout << "Log [" << SDL_GetTicks() << "]: " << "Couldn't open file, using default resolution 1280 x 720" << endl;
+
+	if (!loadSettingFile(screen, event, "Resource")) {
+		screen.defaultScreenUnit();
+		
 	}
-	int screenWidth = screen.getScreenWidth(), screenHeight = screen.getScreenHeight();
-	
+	event.loadDefaultSetting();
+
 	if (!screen.createWindow()) {
-		cout << "Log [" << SDL_GetTicks() << "]: " << "Failed to create window" << endl;
-		loadErrorLog();
 		success = false;
 	}
 	else
 	{
 		if (!screen.createRenderer()) {
 			success = false;
-			cout << "Log [" << SDL_GetTicks() << "]: " << "Failed to load the renderer" << endl;
-		}
-		else {
-			cout << "Log [" << SDL_GetTicks() << "]: " << "Renderer loaded successfully in " << screen.getRenderer()  << endl;
 		}
 	}
 	return success;
 }
 
 //close window and SDL function
-void closeWindow(Screen& background)
+void closeWindow(Screen& screen, Event& event)
 {
-	background.freeScreen();
-	cout << "Log [" << SDL_GetTicks() << "]: " << "Window closed successfully" << endl;
+	screen.freeScreen();
+	event.freeEventControl();
 }
 
 void quitSDL() {
