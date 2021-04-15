@@ -13,52 +13,60 @@ using namespace std;
 //error loading function
 void loadErrorLog();
 
-//enumerations
+//enumerators
 
-enum backgroundNumber {
+enum class BACKGROUND {
 	MENU = 0,
 	CHOOSE_MUSIC = 1,
 	GAME = 2,
-	TOTAL_BACKGROUND = 3,
+	TOTAL = 3,
 };
 
-enum colorStripNumber {
+enum class COLORSTRIP {
 	ORANGE = 0,
 	GREEN = 1,
 	PURPLE = 2,
-	TOTAL_COLOR_STRIP = 3,
+	TOTAL = 3,
 };
 
-enum arrowKeyPress {
+enum class CONTROL {
 	LEFT_ARROW,
 	UP_ARROW,
 	DOWN_ARROW,
 	RIGHT_ARROW,
-	TOTAL_ARROW,
-	CHOOSE_BUTTON,
+	CHOOSE,
 	ESCAPE,
+	TOTAL,
+	TOTAL_ARROW = 4,
 };
 
-enum menuChoose {
-	NOTCHOOSE = -1,
+enum class MENU {
+	NOT_CHOOSE = -1,
 	PLAY = 0,
 	SETTING = 1,
 	EXIT = 2,
-	TOTAL_BUTTON,
+	TOTAL,
 };
 
-enum muscleDoge {
+enum class DOGE {
 	SOURCE_LEFT,
 	SOURCE_IDLE,
 	SOURCE_RIGHT,
 	DESTINATION,
-	TOTAL_DOGE_RECT
+	TOTAL,
 };
 
-extern menuChoose;
-extern backgroundNumber;
-extern colorStripNumber;
-extern arrowKeyPress;
-extern muscleDoge;
+enum class POINT {
+	POINT,
+	TOTAL_ARROW,
+	ACCURACY,
+	PRESSED_ARROW,
+	WRONG_PRESSED,
+	TOTAL,
+};
+
+template <class T> int toInt(T enumerate) {
+	return static_cast<int> (enumerate);
+}
 
 #endif

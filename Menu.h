@@ -9,33 +9,41 @@
 #include <SDL_mixer.h>
 #include <SDL_ttf.h>
 #include "InitAndClose.h"
-#include "Texture.h"
+#include "Utility.h"
 #include "Background.h"
 #include "Game.h"
 using namespace std;
 
 class MenuTexture : private Screen {
 
-	LTexture* menuButton = NULL;
+	LButton* menuButton = NULL;
 	SDL_Rect* menuDstRect = NULL;
-	int menuChoose = -1;
+	MENU menuChoose = MENU::NOT_CHOOSE;
 	bool buttonClick = false;
 
 public:
 
-	void createMenuRect();
+	//constructor
 
-	bool loadMenuTexture(Screen& screen, const string& path);
+	MenuTexture(Screen& screen);
+
+	//basic functions
+
+	bool load(const string& path);
+
+	void render();
+
+	void free();
+
+	//event functions
 
 	void eventHandle(Event& event);
 
-	void renderButton();
-
-	void renderClickedButton(int &buttonType);
-
 	void changeScreen(Screen& screen, Background& background, Event& event, vector<Music>& musicList, bool& quit);
 
-	void freeMenu();
+	//render functions
+
+	void createRect();
 
 };
 

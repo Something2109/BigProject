@@ -15,66 +15,92 @@ using namespace std;
 void game(Screen& screen, Background& background, Event& event, Music& song) {
 
 	//game texture
-	ArrowTexture texture;
-	DogeTexture dogeTexture;
+	ArrowTexture arrowTexture(screen);
+	DogeTexture dogeTexture(screen);
+
+	Point point(screen);
 
 	//quit game
 	bool quit = false;
 
 	//load game resources
-	if (!loadingGameResource(screen, texture, dogeTexture,song)) {
+	if (!loadingGameResource(screen, arrowTexture, dogeTexture, song, point)) {
 		cout << "Log [" << SDL_GetTicks() << "]: " << "Failed to loading game" << endl;
 	}
 	else {
 		//pregame load
 		song.playMusic(0);
-		texture.setTimeline(song);
+		arrowTexture.setTimeline(song);
 
 		//game loop
 		while (!quit) {
 
 			//event handle
 			event.updateEvent();
-			quit = texture.continueGame(event);
 
 			//arrow spawn mechanism
-			texture.addNewArrow(song);
+			arrowTexture.addNewArrow(song, point);
 
 			//render texture
 			screen.clearRenderer();
-			background.renderBackground(GAME);
-			background.renderColorStrip(GAME);
-			texture.renderPressedArrow(event);
-			dogeTexture.renderDogeScreen(event);
-			texture.renderArrowRange();
-			texture.updateArrowRange(song.getVelocity());
+			background.render(BACKGROUND::GAME);
+			point.renderGamePoint();
+			arrowTexture.renderPressedArrow(event, point);
+			dogeTexture.render(event);
+			arrowTexture.renderArrowRange();
+			arrowTexture.updateArrowRange(song, point);
 			screen.presentRenderer();
+
+			quit = !Mix_PlayingMusic() || event.quit();
+		}
+		Mix_PauseMusic();
+		cout << "Log [" << SDL_GetTicks() << "]: " << "Game ending time: " << SDL_GetTicks() << endl;
+
+		string path = "Resource";
+		quit = !point.loadPointScreen(path) || event.quit();
 		
+		while (!quit) {
+			event.updateEvent();
+
+			screen.clearRenderer();
+			background.render(BACKGROUND::GAME);
+			point.renderPointScreen();
+			dogeTexture.render(event);
+			screen.presentRenderer();
+
+			quit = event.quit();
 		}
 	}
 
 	//free game resources
-	freeGamesTexture(texture, dogeTexture, song);
+	freeGamesTexture(arrowTexture, dogeTexture, song, point);
 }
 
 //loading resources
-bool loadingGameResource(Screen& screen, ArrowTexture& texture, DogeTexture &dogeTexture, Music& song) {
+bool loadingGameResource(Screen& screen, ArrowTexture& arrowTexture, DogeTexture &dogeTexture, Music& song, Point& point) {
 	string path = "Resource";
 	bool success = true;
 
 	//load the game texture
-	if (texture.loadTexture(screen, path)) {
-		cout << "Log [" << SDL_GetTicks() << "]: " << "Game Texture loaded successfully" << endl;
+	if (arrowTexture.load(path)) {
+		cout << "Log [" << SDL_GetTicks() << "]: " << "Arrow Texture loaded successfully" << endl;
 
-		if (dogeTexture.loadTexture(screen, path)) {
+		if (dogeTexture.load(path)) {
 			cout << "Log [" << SDL_GetTicks() << "]: " << "Doge Texture loaded successfully" << endl;
 
 			if (song.loadFromFile(path)) {
-				cout << "Log [" << SDL_GetTicks() << "]: " << song.getMusicName() << " loaded successfully" << endl;
+				cout << "Log [" << SDL_GetTicks() << "]: " << song.getSongName() << " loaded successfully" << endl;
 
+				if (point.loadGameFont(path)) {
+					cout << "Log [" << SDL_GetTicks() << "]: " << " Point font loaded successfully" << endl;
+				}
+				else {
+					cout << "Log [" << SDL_GetTicks() << "]: " << "Failed to load point font" << endl;
+					success = false;
+				}
 			}
 			else {
-				cout << "Log [" << SDL_GetTicks() << "]: " << "Failed to load " << song.getMusicName() << endl;
+				cout << "Log [" << SDL_GetTicks() << "]: " << "Failed to load " << song.getSongName() << endl;
 				success = false;
 			}
 		}
@@ -90,10 +116,33 @@ bool loadingGameResource(Screen& screen, ArrowTexture& texture, DogeTexture &dog
 	return success;
 }
 
-bool ArrowTexture::loadTexture(Screen &screen, const string& path) {
+//free all the game textures
+void freeGamesTexture(ArrowTexture& arrowTexture, DogeTexture& dogeTexture, Music& song, Point& point) {
+	arrowTexture.free();
+	dogeTexture.free();
+	song.freeMusicLoad();
+	point.free();
+	cout << "Log [" << SDL_GetTicks() << "]: " << "Music load freed successfully" << endl;
+}
+
+
+
+//ArrowTexture
+
+//constructor
+
+ArrowTexture::ArrowTexture(Screen& screen) {
+	setRenderer(screen);
+}
+
+//basic functions
+
+bool ArrowTexture::load(const string& path) {
 	bool success = true;
-	renderer = screen.getRenderer();
-	setScreenUnit(screen.getScreenUnit());
+
+	blankArrow.free();
+	arrow.free();
+	pressedArrow.free();
 
 	if (!blankArrow.loadFromFile(renderer, path + "/Picture/blankArrow.png")) {
 		cout << "Log [" << SDL_GetTicks() << "]: ";
@@ -113,17 +162,113 @@ bool ArrowTexture::loadTexture(Screen &screen, const string& path) {
 				success = false;
 			}
 			else {
-				createArrowRect();
+				createRect();
 			}
 		}
 	}
 	return success;
 }
 
-bool DogeTexture::loadTexture(Screen& screen, const string& path) {
+void ArrowTexture::render(Event& event, Point& point) {
+	renderPressedArrow(event, point);
+	renderArrowRange();
+}
+
+void ArrowTexture::free() {
+	arrow.free();
+	blankArrow.free();
+	pressedArrow.free();
+
+	delete blankArrowDstRect;
+	blankArrowDstRect = NULL;
+	delete[] arrowSrcRect;
+	arrowSrcRect = NULL;
+	delete[] pressedArrowDstRect;
+	pressedArrowDstRect = NULL;
+
+	renderer = NULL;
+	setScreenUnit(0);
+	cout << "Log [" << SDL_GetTicks() << "]: " << "Doge Texture freed successfully" << endl;
+}
+
+//Arrow spawn functions
+
+void ArrowTexture::setTimeline(Music &song) {
+	startGameTime = SDL_GetTicks();
+	cout << "Log [" << SDL_GetTicks() << "]: " << "Game starting time: " << startGameTime << endl;
+	spawnDuration = song.getDuration() - (screenHeight + screenUnit) * 1000 / song.getVelocity() / 60;
+}
+
+//add new arrow to arrow range
+void ArrowTexture::addNewArrow(Music &song, Point &point) {
+	gameTime = SDL_GetTicks() - startGameTime;
+	if (gameTime < spawnDuration) {
+		if (gameTime > (arrowCount * song.getSpawnRate())) {
+			int arrowCol = rand() % 4;
+			int x = screenUnit * (1 + arrowCol * 2);
+			int y = screenHeight;
+			SDL_Point newArrow = { x, y };
+			arrowRange.push_back(newArrow);
+			arrowCount++;
+		}
+	}
+}
+
+void ArrowTexture::scoreCheck(int& keyType, Point &point) {
+	if (!arrowRange.empty()) {
+		int arrowCol = (arrowRange[0].x / screenUnit - 1) / 2 ;
+		if (arrowCol == keyType) {
+			int accuracy = abs(arrowRange[0].y * 50 / screenUnit - 50);
+			if (accuracy <= 50) {
+				point.addPoint(accuracy);
+				point.arrowCount();
+				SDL_Rect renderRect = { arrowRange[0].x, arrowRange[0].y, screenUnit, screenUnit };
+				arrow.render(renderer, &renderRect, &arrowSrcRect[arrowCol]);
+				arrowRange.erase(arrowRange.begin());
+			}
+			else {
+				point.wrongPressCount();
+			}
+		}
+		else {
+			point.wrongPressCount();
+		}
+	}
+}
+
+void ArrowTexture::updateArrowRange(Music &song, Point &point) {
+	int velocity = song.getVelocity();
+	for (int i = 0; i < arrowRange.size(); i++) {
+		if (arrowRange[i].y <= -screenUnit) {
+			arrowRange.erase(arrowRange.begin() + i);
+			point.arrowCount();
+		}
+		else {
+			arrowRange[i].y -= velocity;
+		}
+	}
+}
+
+
+
+//DogeTexture
+ 
+//Constructor
+
+DogeTexture::DogeTexture(Screen& screen)
+{
+	setRenderer(screen);
+}
+
+//Basic functions
+
+bool DogeTexture::load(const string& path) {
 	bool success = true;
-	renderer = screen.getRenderer();
-	setScreenUnit(screen.getScreenUnit());
+
+	muscleDoge.free();
+	cheems.free();
+	smashedCheems.free();
+	Mix_FreeChunk(bonk);
 
 	if (!muscleDoge.loadFromFile(renderer, path + "/Picture/muscleDoge.png")) {
 		cout << "Log [" << SDL_GetTicks() << "]: ";
@@ -143,7 +288,7 @@ bool DogeTexture::loadTexture(Screen& screen, const string& path) {
 				success = false;
 			}
 			else {
-				createDogeRect();
+				createRect();
 				bonk = Mix_LoadWAV((path + "/Music/bonk.wav").c_str());
 				if (bonk == NULL) {
 					cout << "Log [" << SDL_GetTicks() << "]: ";
@@ -156,83 +301,7 @@ bool DogeTexture::loadTexture(Screen& screen, const string& path) {
 	return success;
 }
 
-void ArrowTexture::setTimeline(Music &song) {
-	startTime = SDL_GetTicks();
-	cout << "Log [" << SDL_GetTicks() << "]: " << "Game starting time: " << startTime << endl;
-	endTime = SDL_GetTicks() + song.getDuration() + 5000;
-	cout << "Log [" << SDL_GetTicks() << "]: " << "Game ending time: " << endTime << endl;
-}
-
-//add new arrow to arrow range
-void ArrowTexture::addNewArrow(Music &song) {
-	gameTime = SDL_GetTicks() - startTime;
-	Uint32 stopArrowTime = endTime - 2000 - screenHeight / song.getVelocity();
-
-	if (gameTime > (arrowCount * song.getSpawnRate()) && gameTime < stopArrowTime) {
-		int arrowCol = rand() % 4;
-		int x = screenUnit * (1 + arrowCol * 2);
-		int y = screenHeight;
-		Coordinate newArrow(x, y);
-		arrowRange.push_back(newArrow);
-		arrowCount++;
-	}
-}
-
-bool ArrowTexture::continueGame(Event& event) {
-	if (gameTime < endTime && !event.quit()) {
-		return false;
-	}
-	return true;
-}
-
-void ArrowTexture::scoreCheck(int& keyType) {
-	if (!arrowRange.empty()) {
-		int arrowCol = arrowRange[0].getArrowCol(screenUnit);
-		if (arrowCol == keyType && arrowRange[0].getY() >= 0 && arrowRange[0].getY() <= 2 * screenUnit) {
-			SDL_Rect renderRect = arrowRange[0].getRect(screenUnit, screenUnit);
-			arrow.render(renderer, &renderRect, &arrowSrcRect[arrowCol]);
-			arrowRange.erase(arrowRange.begin());
-		}
-	}
-}
-
-void DogeTexture::playBonkSound() {
-	if (Mix_PlayingMusic() == 0) {
-		Mix_PlayChannel(0, bonk, 0);
-	}
-}
-
-//update the arrow range
-void ArrowTexture::updateArrowRange(const int& velocity) {
-	for (int i = 0; i < arrowRange.size(); i++) {
-		if (arrowRange[i].getY() <= -screenUnit) {
-			arrowRange.erase(arrowRange.begin() + i);
-		}
-		else {
-			arrowRange[i].arrowMove(velocity);
-		}
-	}
-}
-
-//free all the texture
-void ArrowTexture::freeArrowTexture() {
-	arrow.free();
-	blankArrow.free();
-	pressedArrow.free();
-
-	delete blankArrowDstRect;
-	blankArrowDstRect = NULL;
-	delete[] arrowSrcRect;
-	arrowSrcRect = NULL;
-	delete[] pressedArrowDstRect;
-	pressedArrowDstRect = NULL;
-
-	renderer = NULL;
-	setScreenUnit(0);
-	cout << "Log [" << SDL_GetTicks() << "]: " << "Game Texture freed successfully" << endl;
-}
-
-void DogeTexture::freeDogeTexture() {
+void DogeTexture::free() {
 	muscleDoge.free();
 	cheems.free();
 	smashedCheems.free();
@@ -251,10 +320,10 @@ void DogeTexture::freeDogeTexture() {
 	cout << "Log [" << SDL_GetTicks() << "]: " << "Doge Texture freed successfully" << endl;
 }
 
-//free all the game textures
-void freeGamesTexture(ArrowTexture& texture, DogeTexture &dogeTexture, Music& song) {
-	texture.freeArrowTexture();
-	dogeTexture.freeDogeTexture();
-	song.freeMusicLoad();
-	cout << "Log [" << SDL_GetTicks() << "]: " << "Music load freed successfully" << endl;
+//play sound
+
+void DogeTexture::playBonkSound() {
+	if (Mix_PlayingMusic() == 0) {
+		Mix_PlayChannel(0, bonk, 0);
+	}
 }

@@ -6,7 +6,6 @@
 #include <SDL_image.h>
 #include <SDL_mixer.h>
 #include <SDL_ttf.h>
-#include "Texture.h"
 #include "Background.h"
 #include "Menu.h"
 #include "Game.h"
@@ -16,133 +15,135 @@ using namespace std;
 
 //functions to create the texture to print
 
-void Background::createBackgroundRect() 
+void Background::createRect() 
 {
+	delete[] bgSourceRect;
+	delete[] bgDestinationRect;
+
+	int menu = toInt(BACKGROUND::MENU),
+		chooseMusic = toInt(BACKGROUND::CHOOSE_MUSIC),
+		game = toInt(BACKGROUND::GAME),
+		total = toInt(BACKGROUND::TOTAL);
+
+	bgSourceRect = new SDL_Rect[total];
+	bgDestinationRect = new SDL_Rect[total];
+	colorStripDstRect = new SDL_Rect[total];
+
 	//Rectangles to render from source
-	bgSourceRect = new SDL_Rect[TOTAL_BACKGROUND];
-	bgSourceRect[MENU] = { 0, 0, background.getWidth(), background.getHeight() };
-	bgSourceRect[CHOOSE_MUSIC] = { 0, 0, static_cast<int>(background.getWidth() * 2 / 3), static_cast<int>(background.getHeight() * 2 / 3) };
-	bgSourceRect[GAME] = { 0, background.getHeight() * 2 / 9 , static_cast<int>(background.getWidth() * 2 / 3), static_cast<int>(background.getHeight() * 2 / 3) };
+	bgSourceRect[menu] = { 0, 0, background.getWidth(), background.getHeight() };
+	bgSourceRect[chooseMusic] = { 0, 0, toInt(background.getWidth() * 2 / 3), toInt(background.getHeight() * 2 / 3) };
+	bgSourceRect[game] = { 0, background.getHeight() * 2 / 9 , toInt(background.getWidth() * 2 / 3), toInt(background.getHeight() * 2 / 3) };
 
 	//Rectangles to render to screen
-	bgDestinationRect = new SDL_Rect[TOTAL_BACKGROUND];
-	colorStripDstRect = new SDL_Rect[TOTAL_COLOR_STRIP];
-	bgDestinationRect[MENU] = { 0, 0, static_cast <int>(screenUnit * 19 * 3 / 4) , screenUnit * 9 };
-	bgDestinationRect[CHOOSE_MUSIC] = { static_cast<int> (screenUnit * 1.75), 0, static_cast <int>(screenUnit * 19 * 3 / 4) , screenUnit * 9 };
-	bgDestinationRect[GAME] = bgDestinationRect[CHOOSE_MUSIC];
-	colorStripDstRect[MENU] = { screenUnit * 8, 0, screenUnit * 10, screenUnit * 9 };
-	colorStripDstRect[CHOOSE_MUSIC] = { static_cast<int> (-screenUnit * 2.5), 0, screenUnit * 10, screenUnit * 9 };
-	colorStripDstRect[GAME] = { static_cast<int> (-screenUnit * 2.5), 0, screenUnit * 10, screenUnit * 9 };
+	bgDestinationRect[menu] = { 0, 0, toInt(screenUnit * 19 * 3 / 4) , screenUnit * 9 };
+	bgDestinationRect[chooseMusic] = { toInt(screenUnit * 1.75), 0, toInt(screenUnit * 19 * 3 / 4) , screenUnit * 9 };
+	bgDestinationRect[game] = bgDestinationRect[chooseMusic];
+	colorStripDstRect[menu] = { screenUnit * 8, 0, screenUnit * 10, screenUnit * 9 };
+	colorStripDstRect[chooseMusic] = { toInt(- screenUnit * 2.5), 0, screenUnit * 10, screenUnit * 9 };
+	colorStripDstRect[game] = colorStripDstRect[chooseMusic];
 }
 
-void MenuTexture::createMenuRect() {
-	menuDstRect = new SDL_Rect[TOTAL_BUTTON];
-	menuDstRect[PLAY] = { static_cast<int>(screenUnit * 11.5), static_cast<int>(screenUnit * 3.5) , screenUnit * 3, screenUnit * 1 };
-	menuDstRect[SETTING] = { static_cast<int>(screenUnit * 11), static_cast<int>(screenUnit * 5) , screenUnit * 4, screenUnit * 1 };
-	menuDstRect[EXIT] = { static_cast<int>(screenUnit * 11.5), static_cast<int>(screenUnit * 6.5) , screenUnit * 3, screenUnit * 1 };
+void MenuTexture::createRect() {
+	delete[] menuDstRect;
+	
+	int play = toInt(MENU::PLAY),
+		setting = toInt(MENU::SETTING),
+		exit = toInt(MENU::EXIT);
+	menuDstRect = new SDL_Rect[toInt(MENU::TOTAL)];
+
+	menuDstRect[play] = { toInt(screenUnit * 11.5), toInt(screenUnit * 3.5) , screenUnit * 3, screenUnit * 1 };
+	menuDstRect[setting] = { toInt(screenUnit * 11), toInt(screenUnit * 5) , screenUnit * 4, screenUnit * 1 };
+	menuDstRect[exit] = { toInt(screenUnit * 11.5), toInt(screenUnit * 6.5) , screenUnit * 3, screenUnit * 1 };
 }
 
-void ArrowTexture::createArrowRect()
+void ArrowTexture::createRect()
 {
+	delete blankArrowDstRect;
+	delete[] arrowSrcRect;
+	delete[] pressedArrowDstRect;
+
+	int total = toInt(CONTROL::TOTAL_ARROW),
+		left = toInt(CONTROL::LEFT_ARROW),
+		up = toInt(CONTROL::UP_ARROW),
+		down = toInt(CONTROL::DOWN_ARROW),
+		right = toInt(CONTROL::RIGHT_ARROW);
 	blankArrowDstRect = new SDL_Rect;
-	arrowSrcRect = new SDL_Rect[TOTAL_ARROW];
-	pressedArrowDstRect = new SDL_Rect[TOTAL_ARROW];
+	arrowSrcRect = new SDL_Rect[total];
+	pressedArrowDstRect = new SDL_Rect[total];
 
 	//texture to render from image
-	arrowSrcRect[LEFT_ARROW] = { 0, 0,  arrow.getWidth() / 2,  arrow.getHeight() / 2 };
-	arrowSrcRect[UP_ARROW] = { arrow.getWidth() / 2, 0,  arrow.getWidth() / 2,  arrow.getHeight() / 2 };
-	arrowSrcRect[DOWN_ARROW] = { 0,  arrow.getHeight() / 2,  arrow.getWidth() / 2,  arrow.getHeight() / 2 };
-	arrowSrcRect[RIGHT_ARROW] = { arrow.getWidth() / 2,  arrow.getHeight() / 2,  arrow.getWidth() / 2,  arrow.getHeight() / 2 };
+	arrowSrcRect[left] = { 0, 0,  arrow.getWidth() / 2,  arrow.getHeight() / 2 };
+	arrowSrcRect[up] = { arrow.getWidth() / 2, 0,  arrow.getWidth() / 2,  arrow.getHeight() / 2 };
+	arrowSrcRect[down] = { 0,  arrow.getHeight() / 2,  arrow.getWidth() / 2,  arrow.getHeight() / 2 };
+	arrowSrcRect[right] = { arrow.getWidth() / 2,  arrow.getHeight() / 2,  arrow.getWidth() / 2,  arrow.getHeight() / 2 };
 
 	//texture to render to screen
 	*blankArrowDstRect = { screenUnit, screenUnit, screenUnit * 7, screenUnit };
-	pressedArrowDstRect[LEFT_ARROW] = { screenUnit, screenUnit, screenUnit, screenUnit };
-	pressedArrowDstRect[UP_ARROW] = { 3 * screenUnit, screenUnit, screenUnit, screenUnit };
-	pressedArrowDstRect[DOWN_ARROW] = { 5 * screenUnit, screenUnit, screenUnit, screenUnit };
-	pressedArrowDstRect[RIGHT_ARROW] = { 7 * screenUnit, screenUnit, screenUnit, screenUnit };
+	pressedArrowDstRect[left] = { screenUnit, screenUnit, screenUnit, screenUnit };
+	pressedArrowDstRect[up] = { 3 * screenUnit, screenUnit, screenUnit, screenUnit };
+	pressedArrowDstRect[down] = { 5 * screenUnit, screenUnit, screenUnit, screenUnit };
+	pressedArrowDstRect[right] = { 7 * screenUnit, screenUnit, screenUnit, screenUnit };
 }
 
-void DogeTexture::createDogeRect() {
-	muscleDogeRect = new SDL_Rect[TOTAL_DOGE_RECT];
-	cheemsSrcRect = new SDL_Rect[TOTAL_ARROW];
-	cheemsDstRect = new SDL_Rect[TOTAL_ARROW];
+void DogeTexture::createRect() {
+	delete[] muscleDogeRect;
+	delete[] cheemsSrcRect;
+	delete[] cheemsDstRect;
 
+	int total = toInt(CONTROL::TOTAL_ARROW),
+		left = toInt(CONTROL::LEFT_ARROW),
+		up = toInt(CONTROL::UP_ARROW),
+		down = toInt(CONTROL::DOWN_ARROW),
+		right = toInt(CONTROL::RIGHT_ARROW);
+	muscleDogeRect = new SDL_Rect[toInt(DOGE::TOTAL)];
+	cheemsSrcRect = new SDL_Rect[total];
+	cheemsDstRect = new SDL_Rect[total];
 
 	//texture to render from image
-	muscleDogeRect[SOURCE_LEFT] = { 0, 0,  muscleDoge.getWidth() / 3,  muscleDoge.getHeight() };
-	muscleDogeRect[SOURCE_IDLE] = { muscleDoge.getWidth() / 3, 0,  muscleDoge.getWidth() / 3,  muscleDoge.getHeight() };
-	muscleDogeRect[SOURCE_RIGHT] = { muscleDoge.getWidth() * 2 / 3, 0,  muscleDoge.getWidth() / 3,  muscleDoge.getHeight() };
-	cheemsSrcRect[LEFT_ARROW] = { 0, 0,  cheems.getWidth() / 2,  cheems.getHeight() / 2 };
-	cheemsSrcRect[UP_ARROW] = { 0,  cheems.getHeight() / 2,  cheems.getWidth() / 2,  cheems.getHeight() / 2 };
-	cheemsSrcRect[DOWN_ARROW] = { cheems.getWidth() / 2,  cheems.getHeight() / 2,  cheems.getWidth() / 2,  cheems.getHeight() / 2 };
-	cheemsSrcRect[RIGHT_ARROW] = { cheems.getWidth() / 2, 0,  cheems.getWidth() / 2,  cheems.getHeight() / 2 };
+	muscleDogeRect[toInt(DOGE::SOURCE_LEFT)] = { 0, 0,  muscleDoge.getWidth() / 3,  muscleDoge.getHeight() };
+	muscleDogeRect[toInt(DOGE::SOURCE_IDLE)] = { muscleDoge.getWidth() / 3, 0,  muscleDoge.getWidth() / 3,  muscleDoge.getHeight() };
+	muscleDogeRect[toInt(DOGE::SOURCE_RIGHT)] = { muscleDoge.getWidth() * 2 / 3, 0,  muscleDoge.getWidth() / 3,  muscleDoge.getHeight() };
+	cheemsSrcRect[left] = { 0, 0,  cheems.getWidth() / 2,  cheems.getHeight() / 2 };
+	cheemsSrcRect[up] = { 0,  cheems.getHeight() / 2,  cheems.getWidth() / 2,  cheems.getHeight() / 2 };
+	cheemsSrcRect[down] = { cheems.getWidth() / 2,  cheems.getHeight() / 2,  cheems.getWidth() / 2,  cheems.getHeight() / 2 };
+	cheemsSrcRect[right] = { cheems.getWidth() / 2, 0,  cheems.getWidth() / 2,  cheems.getHeight() / 2 };
 
 	//texture to render to screen
-	muscleDogeRect[DESTINATION] = { static_cast<int>(screenUnit * 10), screenUnit * 3, screenUnit * 4, screenUnit * 4 };
-	cheemsDstRect[LEFT_ARROW] = { static_cast<int>(screenUnit * 9.5), screenUnit * 5, static_cast<int>(screenUnit * 1.5), screenUnit * 2 };
-	cheemsDstRect[UP_ARROW] = { static_cast<int>(screenUnit * 10.5), screenUnit * 6, static_cast<int>(screenUnit * 1.5), screenUnit * 2 };
-	cheemsDstRect[DOWN_ARROW] = { static_cast<int>(screenUnit * 12), screenUnit * 6, static_cast<int>(screenUnit * 1.5), screenUnit * 2 };
-	cheemsDstRect[RIGHT_ARROW] = { static_cast<int>(screenUnit * 13), screenUnit * 5, static_cast<int>(screenUnit * 1.5), screenUnit * 2 };
+	muscleDogeRect[toInt(DOGE::DESTINATION)] = { toInt(screenUnit * 10), screenUnit * 3, screenUnit * 4, screenUnit * 4 };
+	cheemsDstRect[left] = { toInt(screenUnit * 9.5), screenUnit * 5, toInt(screenUnit * 1.5), screenUnit * 2 };
+	cheemsDstRect[up] = { toInt(screenUnit * 10.5), screenUnit * 6, toInt(screenUnit * 1.5), screenUnit * 2 };
+	cheemsDstRect[down] = { toInt(screenUnit * 12), screenUnit * 6, toInt(screenUnit * 1.5), screenUnit * 2 };
+	cheemsDstRect[right] = { toInt(screenUnit * 13), screenUnit * 5, toInt(screenUnit * 1.5), screenUnit * 2 };
 
+}
+
+void Point::createPointRect() {
+	delete pointRect;
+
+	int point = toInt(POINT::POINT),
+		totalArrow = toInt(POINT::TOTAL_ARROW),
+		accuracy = toInt(POINT::ACCURACY),
+		pressedArrow = toInt(POINT::PRESSED_ARROW),
+		wrongPressed = toInt(POINT::WRONG_PRESSED);
+	pointRect = new SDL_Rect[toInt(POINT::TOTAL)];
+
+	pointRect[point] = { screenUnit, toInt(screenUnit * 4), pointText.getWidth(), pointText.getHeight() };
+	pointRect[totalArrow] = { screenUnit, toInt(screenUnit * 14 / 3), totalArrowText.getWidth(), totalArrowText.getHeight() };
+	pointRect[accuracy] = { screenUnit, toInt(screenUnit * 16 / 3), accuracyText.getWidth(), accuracyText.getHeight() };
+	pointRect[pressedArrow] = { screenUnit, toInt(screenUnit * 6), pressedArrowText.getWidth(), pressedArrowText.getHeight() };
+	pointRect[wrongPressed] = { screenUnit, toInt(screenUnit * 20 / 3), wrongPressedText.getWidth(), wrongPressedText.getHeight() };
 }
 
 //Rendering function
-void Background::renderColorStrip(int backgroundType) {
-	moveColorStrip();
-	renderColorStrip(colorStripDstRect[backgroundType]);
-}
-
-void Background::renderColorStrip(SDL_Rect& rectangle) {
-	for (int i = 0; i < TOTAL_COLOR_STRIP; i++) {
-		if (i % 2 == 1) {
-			rectangle.y = screenHeight - rectangle.y;
-		}
-		colorStrip[i].render(renderer, &rectangle, NULL);
-		rectangle.y -= screenHeight;
-		colorStrip[i].render(renderer, &rectangle, NULL);
-		rectangle.y += screenHeight;
-		if (i % 2 == 1) {
-			rectangle.y = screenHeight - rectangle.y;
-		}
-	}
-}
-
-void Background::renderBackground(int backgroundType) {
-	background.render(renderer, &bgDestinationRect[backgroundType], &bgSourceRect[backgroundType]);
-}
-
-void ArrowTexture::renderPressedArrow(Event& event)
+void ArrowTexture::renderPressedArrow(Event& event, Point& point)
 {
-	SDL_Event e = event.getEvent();
-	const Uint8* keyState = event.getKeyState();
-	int keyType;
 	blankArrow.render(renderer, blankArrowDstRect, NULL);
-	if (keyState[SDL_SCANCODE_LEFT]) {
-		pressedArrow.render(renderer, &pressedArrowDstRect[LEFT_ARROW], &arrowSrcRect[LEFT_ARROW]);
-		if (e.key.keysym.sym == SDLK_LEFT && e.key.repeat == 0) {
-			keyType = LEFT_ARROW;
-			scoreCheck(keyType);
-		}
-	}
-	if (keyState[SDL_SCANCODE_UP]) {
-		pressedArrow.render(renderer, &pressedArrowDstRect[UP_ARROW], &arrowSrcRect[UP_ARROW]);
-		if (e.key.keysym.sym == SDLK_UP && e.key.repeat == 0) {
-			keyType = UP_ARROW;
-			scoreCheck(keyType);
-		}
-	}
-	if (keyState[SDL_SCANCODE_DOWN]) {
-		pressedArrow.render(renderer, &pressedArrowDstRect[DOWN_ARROW], &arrowSrcRect[DOWN_ARROW]);
-		if (e.key.keysym.sym == SDLK_DOWN && e.key.repeat == 0) {
-			keyType = DOWN_ARROW;
-			scoreCheck(keyType);
-		}
-	}
-	if (keyState[SDL_SCANCODE_RIGHT]) {
-		pressedArrow.render(renderer, &pressedArrowDstRect[RIGHT_ARROW], &arrowSrcRect[RIGHT_ARROW]);
-		if (e.key.keysym.sym == SDLK_RIGHT && e.key.repeat == 0) {
-			keyType = RIGHT_ARROW;
-			scoreCheck(keyType);
+	for (int type = 0; type < toInt(CONTROL::TOTAL_ARROW); type++) {
+		if (event.checkKeyState(static_cast<CONTROL>(type))) {
+			pressedArrow.render(renderer, &pressedArrowDstRect[type], &arrowSrcRect[type]);
+			if (event.checkEvent(static_cast<CONTROL>(type)) && !event.checkRepeat()) {
+				scoreCheck(type, point);
+			}
 		}
 	}
 }
@@ -150,67 +151,86 @@ void ArrowTexture::renderPressedArrow(Event& event)
 void ArrowTexture::renderArrowRange()
 {
 	for (int i = 0; i < arrowRange.size(); i++) {
-		SDL_Rect renderRect = arrowRange[i].getRect(screenUnit, screenUnit);
-		int arrowCol = arrowRange[i].getArrowCol(screenUnit);
+		SDL_Rect renderRect = { arrowRange[i].x, arrowRange[i].y, screenUnit, screenUnit };
+		int arrowCol = (arrowRange[i].x / screenUnit - 1) / 2;
 		arrow.render(renderer, &renderRect, &arrowSrcRect[arrowCol]);
 	}
 }
 
-void DogeTexture::renderDogeScreen(Event& event)
+void DogeTexture::render(Event& event)
 {
-	SDL_Event e = event.getEvent();
-	const Uint8* keyState = event.getKeyState();
-	if (keyState[SDL_SCANCODE_LEFT]) {
-		if (e.key.repeat == 0) {
+	int left = toInt(CONTROL::LEFT_ARROW),
+		up = toInt(CONTROL::UP_ARROW),
+		down = toInt(CONTROL::DOWN_ARROW),
+		right = toInt(CONTROL::RIGHT_ARROW);
+
+	if (event.checkKeyState(CONTROL::LEFT_ARROW)) {
+		if (!event.checkRepeat()) {
 			playBonkSound();
 		}
-		smashedCheems.render(renderer, &cheemsDstRect[LEFT_ARROW], &cheemsSrcRect[LEFT_ARROW]);
-		muscleDoge.render(renderer, &muscleDogeRect[DESTINATION], &muscleDogeRect[SOURCE_LEFT]);
-		cheems.render(renderer, &cheemsDstRect[RIGHT_ARROW], &cheemsSrcRect[RIGHT_ARROW]);
-		cheems.render(renderer, &cheemsDstRect[UP_ARROW], &cheemsSrcRect[UP_ARROW]);
-		cheems.render(renderer, &cheemsDstRect[DOWN_ARROW], &cheemsSrcRect[DOWN_ARROW]);
+		smashedCheems.render(renderer, &cheemsDstRect[left], &cheemsSrcRect[left]);
+		cheems.render(renderer, &cheemsDstRect[right], &cheemsSrcRect[right]);
+		muscleDoge.render(renderer, &muscleDogeRect[toInt(DOGE::DESTINATION)], &muscleDogeRect[toInt(DOGE::SOURCE_LEFT)]);
+		cheems.render(renderer, &cheemsDstRect[up], &cheemsSrcRect[up]);
+		cheems.render(renderer, &cheemsDstRect[down], &cheemsSrcRect[down]);
 	}
 	else {
-		if (keyState[SDL_SCANCODE_UP]) {
-			if (e.key.repeat == 0) {
+		if (event.checkKeyState(CONTROL::UP_ARROW)) {
+			if (!event.checkRepeat()) {
 				playBonkSound();
 			}
-			muscleDoge.render(renderer, &muscleDogeRect[DESTINATION], &muscleDogeRect[SOURCE_IDLE]);
-			cheems.render(renderer, &cheemsDstRect[LEFT_ARROW], &cheemsSrcRect[LEFT_ARROW]);
-			cheems.render(renderer, &cheemsDstRect[RIGHT_ARROW], &cheemsSrcRect[RIGHT_ARROW]);
-			smashedCheems.render(renderer, &cheemsDstRect[UP_ARROW], &cheemsSrcRect[UP_ARROW]);
-			cheems.render(renderer, &cheemsDstRect[DOWN_ARROW], &cheemsSrcRect[DOWN_ARROW]);
+			cheems.render(renderer, &cheemsDstRect[left], &cheemsSrcRect[left]);
+			cheems.render(renderer, &cheemsDstRect[right], &cheemsSrcRect[right]);
+			muscleDoge.render(renderer, &muscleDogeRect[toInt(DOGE::DESTINATION)], &muscleDogeRect[toInt(DOGE::SOURCE_IDLE)]);
+			smashedCheems.render(renderer, &cheemsDstRect[up], &cheemsSrcRect[up]);
+			cheems.render(renderer, &cheemsDstRect[down], &cheemsSrcRect[down]);
 		}
 		else {
-			if (keyState[SDL_SCANCODE_DOWN]) {
-				if (e.key.repeat == 0) {
+			if (event.checkKeyState(CONTROL::DOWN_ARROW)) {
+				if (!event.checkRepeat()) {
 					playBonkSound();
 				}
-				muscleDoge.render(renderer, &muscleDogeRect[DESTINATION], &muscleDogeRect[SOURCE_IDLE]);
-				cheems.render(renderer, &cheemsDstRect[LEFT_ARROW], &cheemsSrcRect[LEFT_ARROW]);
-				cheems.render(renderer, &cheemsDstRect[RIGHT_ARROW], &cheemsSrcRect[RIGHT_ARROW]);
-				cheems.render(renderer, &cheemsDstRect[UP_ARROW], &cheemsSrcRect[UP_ARROW]);
-				smashedCheems.render(renderer, &cheemsDstRect[DOWN_ARROW], &cheemsSrcRect[DOWN_ARROW]);
+				cheems.render(renderer, &cheemsDstRect[left], &cheemsSrcRect[left]);
+				cheems.render(renderer, &cheemsDstRect[right], &cheemsSrcRect[right]);
+				muscleDoge.render(renderer, &muscleDogeRect[toInt(DOGE::DESTINATION)], &muscleDogeRect[toInt(DOGE::SOURCE_IDLE)]);
+				cheems.render(renderer, &cheemsDstRect[up], &cheemsSrcRect[up]);
+				smashedCheems.render(renderer, &cheemsDstRect[down], &cheemsSrcRect[down]);
 			}
 			else {
-				if (keyState[SDL_SCANCODE_RIGHT]) {
-					if (e.key.repeat == 0) {
+				if (event.checkKeyState(CONTROL::RIGHT_ARROW)) {
+					if (!event.checkRepeat()) {
 						playBonkSound();
 					}
-					smashedCheems.render(renderer, &cheemsDstRect[RIGHT_ARROW], &cheemsSrcRect[RIGHT_ARROW]);
-					muscleDoge.render(renderer, &muscleDogeRect[DESTINATION], &muscleDogeRect[SOURCE_RIGHT]);
-					cheems.render(renderer, &cheemsDstRect[LEFT_ARROW], &cheemsSrcRect[LEFT_ARROW]);
-					cheems.render(renderer, &cheemsDstRect[UP_ARROW], &cheemsSrcRect[UP_ARROW]);
-					cheems.render(renderer, &cheemsDstRect[DOWN_ARROW], &cheemsSrcRect[DOWN_ARROW]);
+					smashedCheems.render(renderer, &cheemsDstRect[right], &cheemsSrcRect[right]);
+					cheems.render(renderer, &cheemsDstRect[left], &cheemsSrcRect[left]);
+					muscleDoge.render(renderer, &muscleDogeRect[toInt(DOGE::DESTINATION)], &muscleDogeRect[toInt(DOGE::SOURCE_RIGHT)]);
+					cheems.render(renderer, &cheemsDstRect[up], &cheemsSrcRect[up]);
+					cheems.render(renderer, &cheemsDstRect[down], &cheemsSrcRect[down]);
 				}
 				else {
-					muscleDoge.render(renderer, &muscleDogeRect[DESTINATION], &muscleDogeRect[SOURCE_IDLE]);
-					cheems.render(renderer, &cheemsDstRect[LEFT_ARROW], &cheemsSrcRect[LEFT_ARROW]);
-					cheems.render(renderer, &cheemsDstRect[RIGHT_ARROW], &cheemsSrcRect[RIGHT_ARROW]);
-					cheems.render(renderer, &cheemsDstRect[UP_ARROW], &cheemsSrcRect[UP_ARROW]);
-					cheems.render(renderer, &cheemsDstRect[DOWN_ARROW], &cheemsSrcRect[DOWN_ARROW]);
+					cheems.render(renderer, &cheemsDstRect[left], &cheemsSrcRect[left]);
+					cheems.render(renderer, &cheemsDstRect[right], &cheemsSrcRect[right]);
+					muscleDoge.render(renderer, &muscleDogeRect[toInt(DOGE::DESTINATION)], &muscleDogeRect[toInt(DOGE::SOURCE_IDLE)]);
+					cheems.render(renderer, &cheemsDstRect[up], &cheemsSrcRect[up]);
+					cheems.render(renderer, &cheemsDstRect[down], &cheemsSrcRect[down]);
 				}
 			}
 		}
 	}
+}
+
+void Point::renderGamePoint() {
+	pointText.free();
+	if (pointText.loadFromRenderedText(renderer, ("Point: " + to_string(point)), pointColor, pointFont)) {
+		*pointRect = { screenUnit * 10 , screenUnit, pointText.getWidth(), pointText.getHeight() };
+		pointText.render(renderer, pointRect, NULL);
+	}
+}
+
+void Point::renderPointScreen() {
+	pointText.render(renderer, &pointRect[toInt(POINT::POINT)], NULL);
+	totalArrowText.render(renderer, &pointRect[toInt(POINT::TOTAL_ARROW)], NULL);
+	accuracyText.render(renderer, &pointRect[toInt(POINT::ACCURACY)], NULL);
+	pressedArrowText.render(renderer, &pointRect[toInt(POINT::PRESSED_ARROW)], NULL);
+	wrongPressedText.render(renderer, &pointRect[toInt(POINT::WRONG_PRESSED)], NULL);
 }
