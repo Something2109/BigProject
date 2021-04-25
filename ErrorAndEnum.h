@@ -10,23 +10,43 @@
 #include <SDL_ttf.h>
 using namespace std;
 
-//error loading function
-void loadErrorLog();
 
 //enumerators
 
 enum class BACKGROUND {
-	MENU = 0,
-	CHOOSE_MUSIC = 1,
-	GAME = 2,
-	TOTAL = 3,
+	MENU,
+	SETTING,
+	CHOOSE_MUSIC,
+	GAME,
+	EXIT,
+	TOTAL,
 };
 
 enum class COLORSTRIP {
-	ORANGE = 0,
-	GREEN = 1,
-	PURPLE = 2,
-	TOTAL = 3,
+	ORANGE,
+	GREEN,
+	PURPLE,
+	TOTAL,
+};
+
+enum class BUTTON {
+	CHANGE_SONG_LEFT,
+	CHANGE_SONG_RIGHT,
+	PLAY,
+	CONTINUE,
+	SAVE,
+	SETTING,
+	EXIT,
+	TOTAL,
+	NOT_CHOOSE = -1,
+};
+
+enum class TITLE {
+	MENU,
+	PAUSE,
+	FINISH,
+	SETTING,
+	TOTAL,
 };
 
 enum class CONTROL {
@@ -38,14 +58,6 @@ enum class CONTROL {
 	ESCAPE,
 	TOTAL,
 	TOTAL_ARROW = 4,
-};
-
-enum class MENU {
-	NOT_CHOOSE = -1,
-	PLAY = 0,
-	SETTING = 1,
-	EXIT = 2,
-	TOTAL,
 };
 
 enum class DOGE {
@@ -61,9 +73,17 @@ enum class POINT {
 	TOTAL_ARROW,
 	ACCURACY,
 	PRESSED_ARROW,
+	MAX_COMBO,
 	WRONG_PRESSED,
 	TOTAL,
 };
+
+enum class SETTING {
+	RESOLUTION,
+	ARROW_COLOR,
+	CONTROL,
+};
+
 
 template <class T> int toInt(T enumerate) {
 	return static_cast<int> (enumerate);
