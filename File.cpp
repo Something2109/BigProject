@@ -13,7 +13,7 @@ using namespace std;
 //this file contains all the file reading and writing function
 
 //load the saved setting 
-bool loadSettingFile(Screen& screen, Event& event, string path) {
+bool loadSettingFile(Window& screen, Event& event, string path) {
 	bool success = true;
 	ifstream file((path + "/Setting.txt").c_str());
 
@@ -26,11 +26,12 @@ bool loadSettingFile(Screen& screen, Event& event, string path) {
 			string type;
 			int number;
 			ss >> type >> number;
+
 			if (type == "ScreenUnit" && number > 0) {
 				screen.setScreenUnit(number);
 			}
 			else {
-				return false;
+				//event.loadEventCode(ss);
 			}
 		}
 		
@@ -46,39 +47,37 @@ bool loadSettingFile(Screen& screen, Event& event, string path) {
 
 void Event::loadEventCode(stringstream& input) {
 	string type;
-	int scancode, totalButton = static_cast<int> (CONTROL::TOTAL);
-	scanControl = new SDL_Scancode[totalButton];
-	keyControl = new SDL_Keycode[totalButton];
+	int scancode, totalButton = toInt (CONTROL::TOTAL);
 
 	input >> type >> scancode;
 
 	int buttonType = 0;
 
 	if (type == "LeftArrow") {
-		buttonType = static_cast<int>(CONTROL::LEFT_ARROW);
+		buttonType = toInt(CONTROL::LEFT_ARROW);
 	}
 	if (type == "UpArrow") {
-		buttonType = static_cast<int>(CONTROL::UP_ARROW);
+		buttonType = toInt(CONTROL::UP_ARROW);
 	}
 	if (type == "DownArrow") {
-		buttonType = static_cast<int>(CONTROL::DOWN_ARROW);
+		buttonType = toInt(CONTROL::DOWN_ARROW);
 	}
 	if (type == "RightArrow") {
-		buttonType = static_cast<int>(CONTROL::RIGHT_ARROW);
+		buttonType = toInt(CONTROL::RIGHT_ARROW);
 	}
 	if (type == "ChooseButton") {
-		buttonType = static_cast<int>(CONTROL::CHOOSE);
+		buttonType = toInt(CONTROL::CHOOSE);
 	}
 	if (type == "EscapeButton") {
-		buttonType = static_cast<int>(CONTROL::ESCAPE);
+		buttonType = toInt(CONTROL::ESCAPE);
 	}
-
 	scanControl[buttonType] = static_cast<SDL_Scancode>(scancode);
 	keyControl[buttonType] = SDL_GetKeyFromScancode(scanControl[buttonType]);
+	cout << "Log [" << SDL_GetTicks() << "]: " << "Assign " << scancode << " to " << type << endl;
 }
 
 //music reading function
-bool loadMusicFile(Screen& screen, vector<Music>& musicList, string path) {
+bool loadMusicFile(vector<Music>& musicList, string path, int screenUnit) {
 	bool success = true;
 	ifstream file((path + "/Music.txt").c_str());
 
@@ -90,12 +89,14 @@ bool loadMusicFile(Screen& screen, vector<Music>& musicList, string path) {
 			getline(file, str);
 			stringstream ss(str);
 			string name, singer, add;
-			Uint32 duration;
+			Uint32 start, duration;
 			int velocity,
-				spawnRate;
+				bpm;
+			ss >> add;
+			name = add;
 			ss >> add;
 			while (add[0] != '-') {
-				name += add;
+				name = name + ' ' + add;
 				ss >> add;
 			}
 			ss >> add;
@@ -103,9 +104,8 @@ bool loadMusicFile(Screen& screen, vector<Music>& musicList, string path) {
 				singer = singer + ' ' + add;
 				ss >> add;
 			}
-			ss >> duration >> velocity >> spawnRate;
-			Music song;
-			song.loadMusicInfo(name, singer, duration ,velocity, spawnRate, screen.getScreenUnit());
+			ss >> start >> duration >> velocity >> bpm;
+			Music song(name, singer, start, duration ,velocity, bpm, screenUnit);
 			musicList.push_back(song);
 			cout << "Log [" << SDL_GetTicks() << "]: " << name << " -" << singer << " is opened" << endl;
 		}

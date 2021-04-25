@@ -12,7 +12,7 @@ using namespace std;
 //this file contains functions to initiate and close SDL, renderer, window
 
 // function contain all the initiation function
-bool init(Screen& screen, Event& event) {
+bool init(Window& screen, Event& event) {
 	bool success = true;
 	if (!initSDL()) {
 		cout << "Log [" << SDL_GetTicks() << "]: " << "Failed to initialize SDL" << endl;
@@ -67,14 +67,16 @@ bool initSDL()
 }
 
 //Window initiation function
-bool initWindow(Screen& screen, Event& event) {
+bool initWindow(Window& screen, Event& event) {
 	bool success = true;
 
 	if (!loadSettingFile(screen, event, "Resource")) {
 		screen.defaultScreenUnit();
 		
 	}
-	event.loadDefaultSetting();
+	else {
+		event.loadDefaultSetting();
+	}
 
 	if (!screen.createWindow()) {
 		success = false;
@@ -89,10 +91,9 @@ bool initWindow(Screen& screen, Event& event) {
 }
 
 //close window and SDL function
-void closeWindow(Screen& screen, Event& event)
+void closeWindow(Window& screen)
 {
-	screen.freeScreen();
-	event.freeEventControl();
+	screen.free();
 }
 
 void quitSDL() {

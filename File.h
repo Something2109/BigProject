@@ -1,5 +1,5 @@
-#ifndef _FileReadAndWrite_h
-#define _FileReadAndWrite_h
+#ifndef _File_h
+#define _File_h
 #include <iostream>
 #include <cmath>
 #include <string>
@@ -15,9 +15,9 @@ using namespace std;
 //this file contains all the file reading and writing function
 
 //load the saved setting 
-bool loadSettingFile(Screen& screen, Event& event, string path);
+bool loadSettingFile(Window& screen, Event& event, string path);
 
 //music reading function
-bool loadMusicFile(Screen& background, vector<Music>& musicList, string path);
+bool loadMusicFile(vector<Music>& musicList, string path, int screenUnit);
 
 #endif
