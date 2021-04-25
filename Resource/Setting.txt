@@ -1,7 +1,0 @@
-ScreenUnit 80
-LeftArrow 80
-UpArrow 82
-DownArrow 81
-RightArrow 79
-ChooseButton 44
-EscapeButton 41
