@@ -15,9 +15,11 @@ using namespace std;
 //this file contains all the file reading and writing function
 
 //load the saved setting 
-bool loadSettingFile(Window& screen, Event& event, string path);
+void loadSettingFile(Window& screen, Event& event, string path);
 
 //music reading function
-bool loadMusicFile(vector<Music>& musicList, string path, int screenUnit);
+bool loadMusicFile(vector<Music>& musicList, string path);
+
+void saveSettingFile(Window& screen, Event& event, const string path);
 
 #endif

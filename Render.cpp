@@ -20,72 +20,104 @@ void Background::createDefaultRect()
 	delete[] bgDestinationRect;
 	delete[] colorStripDstRect;
 
-	int menu = toInt(BACKGROUND::MENU),
+	int intro1 = toInt(BACKGROUND::INTRO1),
+		intro2 = toInt(BACKGROUND::INTRO2),
+		intro3 = toInt(BACKGROUND::INTRO3),
+		start = toInt(BACKGROUND::START),
+		menu = toInt(BACKGROUND::MENU),
 		setting = toInt(BACKGROUND::SETTING),
 		chooseMusic = toInt(BACKGROUND::CHOOSE_MUSIC),
 		game = toInt(BACKGROUND::GAME),
 		exit = toInt(BACKGROUND::EXIT),
 		total = toInt(BACKGROUND::TOTAL);
 
+	yColorStripVelo = *screenUnit / 20;
 	bgSourceRect = new SDL_Rect[total];
 	bgDestinationRect = new SDL_Rect[total];
 	colorStripDstRect = new SDL_Rect[total];
 
 	//Rectangles to render from source
-	bgSourceRect[menu] = { 0, 0, background.getWidth(), background.getHeight() };
-	bgSourceRect[setting] = { background.getHeight() * 6 / 9, background.getHeight() / 9, toInt(background.getWidth() * 4 / 9), toInt(background.getHeight() * 4 / 9) };
-	bgSourceRect[chooseMusic] = { 0, 0, toInt(background.getWidth() * 2 / 3), toInt(background.getHeight() * 2 / 3) };
-	bgSourceRect[game] = { 0, background.getHeight() * 2 / 9 , toInt(background.getWidth() * 2 / 3), toInt(background.getHeight() * 2 / 3) };
-	bgSourceRect[exit] = { toInt(background.getWidth() * 4 / 9), 0, toInt(background.getWidth() * 5 / 9), toInt(background.getHeight() * 5 / 9) };
+	bgSourceRect[intro1] = { toInt(background->getHeight() * 5.75 / 9), background->getHeight() / 18, toInt(background->getWidth() / 9), toInt(background->getHeight() / 9) };
+	bgSourceRect[intro2] = { background->getHeight() * 5 / 9, 0, toInt(background->getWidth() * 2 / 9), toInt(background->getHeight() * 2 / 9) };
+	bgSourceRect[intro3] = { background->getHeight() / 3, background->getHeight() / 3 , toInt(background->getWidth() * 2 / 3), toInt(background->getHeight() * 2 / 3) };
+	bgSourceRect[start] = { background->getHeight() * 6 / 9, background->getHeight() / 9, toInt(background->getWidth() * 4 / 9), toInt(background->getHeight() * 4 / 9) };
+	bgSourceRect[menu] = { 0, 0, background->getWidth(), background->getHeight() };
+	bgSourceRect[setting] = bgSourceRect[start];
+	bgSourceRect[chooseMusic] = { 0, 0, toInt(background->getWidth() * 2 / 3), toInt(background->getHeight() * 2 / 3) };
+	bgSourceRect[game] = { 0, background->getHeight() * 2 / 9 , toInt(background->getWidth() * 2 / 3), toInt(background->getHeight() * 2 / 3) };
+	bgSourceRect[exit] = { toInt(background->getWidth() * 4 / 9), 0, toInt(background->getWidth() * 5 / 9), toInt(background->getHeight() * 5 / 9) };
 
 	//Rectangles to render to screen
-	bgDestinationRect[menu] = { 0, 0, toInt(*screenUnit * 19 * 3 / 4) , *screenUnit * 9 };
-	bgDestinationRect[setting] = { toInt(*screenUnit * 1.75), 0, toInt(*screenUnit * 19 * 3 / 4) , *screenUnit * 9 };
-	bgDestinationRect[chooseMusic] = bgDestinationRect[setting];
-	bgDestinationRect[game] = bgDestinationRect[chooseMusic];
-	bgDestinationRect[exit] = bgDestinationRect[setting];
-	colorStripDstRect[menu] = { *screenUnit * 8, 0, *screenUnit * 10, *screenUnit * 9 };
-	colorStripDstRect[setting] = { toInt(-*screenUnit * 2.5), 0, *screenUnit * 10, *screenUnit * 9 };
-	colorStripDstRect[chooseMusic] = colorStripDstRect[setting];
+	bgDestinationRect[intro1] = setScreenUnitRect(0, 0, 14.25, 9);
+	bgDestinationRect[intro2] = setScreenUnitRect(1.75, 0, 14.25, 9);
+	bgDestinationRect[intro3] = bgDestinationRect[intro1];
+	bgDestinationRect[start] = bgDestinationRect[intro2];
+	bgDestinationRect[menu] = bgDestinationRect[intro1];
+	bgDestinationRect[setting] = bgDestinationRect[intro2];
+	bgDestinationRect[chooseMusic] = bgDestinationRect[intro2];
+	bgDestinationRect[game] = bgDestinationRect[intro2];
+	bgDestinationRect[exit] = bgDestinationRect[intro2];
+
+	colorStripDstRect[intro1] = setScreenUnitRect(13, 9 * currentColorPlace, 10, 9);
+	colorStripDstRect[intro2] = setScreenUnitRect(-7, 9 * currentColorPlace, 10, 9);
+	colorStripDstRect[intro3] = setScreenUnitRect(10.5, 9 * currentColorPlace, 10, 9);
+	colorStripDstRect[start] = setScreenUnitRect(-2, 9 * currentColorPlace, 10, 9);
+	colorStripDstRect[menu] = setScreenUnitRect(8, 9 * currentColorPlace, 10, 9);
+	colorStripDstRect[setting] = setScreenUnitRect(-2, 9 * currentColorPlace, 10, 9);
+	colorStripDstRect[chooseMusic] = setScreenUnitRect(-2.5, 9 * currentColorPlace, 10, 9);
 	colorStripDstRect[game] = colorStripDstRect[chooseMusic];
-	colorStripDstRect[exit] = { -*screenUnit * 2, 0,  *screenUnit * 10, *screenUnit * 9 };
+	colorStripDstRect[exit] = setScreenUnitRect(-2, 9 * currentColorPlace, 10, 9);
 }
 
 void Button::createDefaultRect()
 {
 	delete[] buttonDstRect;
 
-	int playNumb = toInt(BUTTON::PLAY),
-		continueNumb = toInt(BUTTON::CONTINUE),
-		saveNumb = toInt(BUTTON::SAVE),
-		settingNumb = toInt(BUTTON::SETTING),
-		exitNumb = toInt(BUTTON::EXIT),
-		changeSongLeft = toInt(BUTTON::CHANGE_SONG_LEFT),
-		changeSongRight = toInt(BUTTON::CHANGE_SONG_RIGHT);
-	buttonDstRect = new SDL_Rect[toInt(BUTTON::TOTAL)];
+	buttonDstRect = new SDL_Rect[static_cast<int>(BUTTON::TOTAL)];
 	buttonChoose = -1;
 	for (int button = 0; button < toInt(BUTTON::TOTAL); button++) {
+		buttonDstRect[button] = setScreenUnitRect(-1, -1, 0, 0);
 		usingButton[button] = false;
 	}
+}
 
-	buttonDstRect[playNumb] = { *screenWidth, *screenHeight, 0, 0 };
-	buttonDstRect[continueNumb] = { *screenWidth, *screenHeight, 0, 0 };
-	buttonDstRect[saveNumb] = { *screenWidth, *screenHeight, 0, 0 };
-	buttonDstRect[settingNumb] = { *screenWidth, *screenHeight, 0, 0 };
-	buttonDstRect[exitNumb] = { *screenWidth, *screenHeight, 0, 0 };
-	buttonDstRect[changeSongLeft] = { *screenWidth, *screenHeight, 0, 0 };
-	buttonDstRect[changeSongRight] = { *screenWidth, *screenHeight, 0, 0 };
+void Button::createRect(TITLE type)
+{
+	createDefaultRect();
+	switch(type) {
+		case TITLE::MENU: {
+			createMenuRect();
+			break;
+		}
+		case TITLE::CHOOSE_MUSIC: {
+			createChooseMusic();
+			break;
+		}
+		case TITLE::PAUSE: {
+			createPauseRect();
+			break;
+		}
+		case TITLE::FINISH: {
+			createScoreRect();
+			break;
+		}
+		case TITLE::SETTING: {
+			createSettingRect();
+			break;
+		}
+	}
 }
 
 void Button::createMenuRect() {
-	createDefaultRect();
 	int playNumb = toInt(BUTTON::PLAY),
 		settingNumb = toInt(BUTTON::SETTING),
-		exitNumb = toInt(BUTTON::EXIT);
+		exitNumb = toInt(BUTTON::EXIT),
+		pressKeyNumb = toInt(BUTTON::PRESS_KEY);
 
-	buttonDstRect[playNumb] = { toInt(*screenUnit * 11.5), toInt(*screenUnit * 3.5) , *screenUnit * 3, *screenUnit * 1 };
-	buttonDstRect[settingNumb] = { toInt(*screenUnit * 11), toInt(*screenUnit * 5) , *screenUnit * 4, *screenUnit * 1 };
-	buttonDstRect[exitNumb] = { toInt(*screenUnit * 11.5), toInt(*screenUnit * 6.5) , *screenUnit * 3, *screenUnit * 1 };
+	buttonDstRect[playNumb] = setScreenUnitRect(11.5, 3.5 , 3, 1);
+	buttonDstRect[settingNumb] = setScreenUnitRect(11, 5, 4, 1);
+	buttonDstRect[exitNumb] = setScreenUnitRect(11.5, 6.5, 3, 1);
+	buttonDstRect[pressKeyNumb] = setScreenUnitRect(0.5, 6, 5.5, 1);
 	usingButton[playNumb] = true;
 	usingButton[settingNumb] = true;
 	usingButton[exitNumb] = true;
@@ -93,16 +125,15 @@ void Button::createMenuRect() {
 
 void Button::createChooseMusic()
 {
-	createDefaultRect();
 	int playNumb = toInt(BUTTON::PLAY),
 		exitNumb = toInt(BUTTON::EXIT),
 		changeSongLeft = toInt(BUTTON::CHANGE_SONG_LEFT),
 		changeSongRight = toInt(BUTTON::CHANGE_SONG_RIGHT);
 
-	buttonDstRect[changeSongLeft] = { *screenUnit, *screenUnit, *screenUnit, *screenUnit };
-	buttonDstRect[changeSongRight] = { *screenUnit * 4, *screenUnit, *screenUnit, *screenUnit };
-	buttonDstRect[playNumb] = { toInt(*screenUnit * 1.5), toInt(*screenUnit * 5.5) , *screenUnit * 3, *screenUnit * 1 };
-	buttonDstRect[exitNumb] = { toInt(*screenUnit * 1.5), toInt(*screenUnit * 7) , *screenUnit * 3, *screenUnit * 1 };
+	buttonDstRect[changeSongLeft] = setScreenUnitRect(0.75, 1, 1, 1);
+	buttonDstRect[changeSongRight] = setScreenUnitRect(3.75, 1, 1, 1);
+	buttonDstRect[playNumb] = setScreenUnitRect(1.25, 5.5, 3, 1);
+	buttonDstRect[exitNumb] = setScreenUnitRect(1.25, 7, 3, 1);
 	usingButton[changeSongLeft] = true;
 	usingButton[changeSongRight] = true;
 	usingButton[playNumb] = true;
@@ -110,49 +141,54 @@ void Button::createChooseMusic()
 }
 
 void Button::createScoreRect() {
-	createDefaultRect();
 	int exitNumb = toInt(BUTTON::EXIT);
 
-	buttonDstRect[exitNumb] = { toInt(*screenUnit * 1.5), toInt(*screenUnit * 6.5) , *screenUnit * 3, *screenUnit * 1 };
+	buttonDstRect[exitNumb] = setScreenUnitRect(1.5, 6.5, 3, 1);;
 	usingButton[exitNumb] = true;
 }
 
 void Button::createPauseRect() {
-	createDefaultRect();
 	int continueNumb = toInt(BUTTON::CONTINUE),
 		settingNumb = toInt(BUTTON::SETTING),
 		exitNumb = toInt(BUTTON::EXIT);
 
-	buttonDstRect[continueNumb] = { toInt(*screenUnit * 0.75), toInt(*screenUnit * 3.5) , toInt(*screenUnit * 4.5), *screenUnit * 1 };
-	buttonDstRect[settingNumb] = { toInt(*screenUnit * 1), toInt(*screenUnit * 5) , *screenUnit * 4, *screenUnit * 1 };
-	buttonDstRect[exitNumb] = { toInt(*screenUnit * 1.5), toInt(*screenUnit * 6.5) , *screenUnit * 3, *screenUnit * 1 };
+	buttonDstRect[continueNumb] = setScreenUnitRect(0.75, 3.5, 4.5, 1);
+	buttonDstRect[settingNumb] = setScreenUnitRect(1, 5, 4, 1);
+	buttonDstRect[exitNumb] = setScreenUnitRect(1.5, 6.5, 3, 1);
 	usingButton[continueNumb] = true;
 	usingButton[settingNumb] = true;
 	usingButton[exitNumb] = true;
 }
 
 void Button::createSettingRect() {
-	createDefaultRect();
 	int saveNumb = toInt(BUTTON::SAVE),
-		exitNumb = toInt(BUTTON::EXIT);
+		exitNumb = toInt(BUTTON::EXIT),
+		pressKeyNumb = toInt(BUTTON::PRESS_KEY);
 
-	buttonDstRect[saveNumb] = { toInt(*screenUnit * 1.75), toInt(*screenUnit * 5.5) , toInt(*screenUnit * 2.5), *screenUnit * 1 };
-	buttonDstRect[exitNumb] = { toInt(*screenUnit * 1.5), toInt(*screenUnit * 7) , *screenUnit * 3, *screenUnit * 1 };
-	usingButton[saveNumb] = true;
+	buttonDstRect[saveNumb] = setScreenUnitRect(2, 5.5, 2.5, 1);
+	buttonDstRect[exitNumb] = setScreenUnitRect(1.75, 7, 3, 1);
+	buttonDstRect[pressKeyNumb] = setScreenUnitRect(0.5, 5.5, 5.5, 1);
 	usingButton[exitNumb] = true;
 
 }
 
 void Title::createDefaultRect()
 {
-	titleDstRect[toInt(TITLE::MENU)] = { *screenUnit * 10, *screenUnit, toInt(*screenUnit * 5.5), *screenUnit * 2 };
-	titleDstRect[toInt(TITLE::PAUSE)] = { toInt(*screenUnit * 0.5), toInt(*screenUnit * 1.5), toInt(*screenUnit * 5), toInt(*screenUnit * 1.5) };
-	titleDstRect[toInt(TITLE::FINISH)] = { *screenUnit * 9, *screenUnit * 1, toInt(*screenUnit * 6), *screenUnit * 2 };
-	titleDstRect[toInt(TITLE::SETTING)] = { *screenUnit * 8, *screenUnit * 1, toInt(*screenUnit * 7), *screenUnit * 2 };
+	delete[] titleDstRect;
+
+	titleDstRect = new SDL_Rect[static_cast<int>(TITLE::TOTAL)];
+
+	titleDstRect[toInt(TITLE::INTRO1)] = setScreenUnitRect(6.5, 3, 5, 3);
+	titleDstRect[toInt(TITLE::MENU)] = setScreenUnitRect(10, 1, 5.5, 2);
+	titleDstRect[toInt(TITLE::CHOOSE_MUSIC)] = setScreenUnitRect(8, 1, 7, 1.5);
+	titleDstRect[toInt(TITLE::PAUSE)] = setScreenUnitRect(0.5, 1.5, 5, 1.5);
+	titleDstRect[toInt(TITLE::FINISH)] = setScreenUnitRect(9, 1, 6, 2);
+	titleDstRect[toInt(TITLE::SETTING)] = setScreenUnitRect(8.5, 1, 7, 2);
+	titleDstRect[toInt(TITLE::EXIT)] = setScreenUnitRect(0.5, 2, 5.5, 2);
 }
 
 void Point::createDefaultRect() {
-	delete pointRect;
+	delete[] pointRect;
 
 	int pointNumb = toInt(POINT::POINT),
 		totalArrowNumb = toInt(POINT::TOTAL_ARROW),
@@ -162,12 +198,12 @@ void Point::createDefaultRect() {
 		wrongPressedNumb = toInt(POINT::WRONG_PRESSED);
 	pointRect = new SDL_Rect[toInt(POINT::TOTAL)];
 
-	pointRect[pointNumb] = { *screenUnit, toInt(*screenUnit * 2), pointTexture[pointNumb].getWidth(), pointTexture[pointNumb].getHeight() };
-	pointRect[totalArrowNumb] = { *screenUnit, toInt(*screenUnit * 8 / 3), pointTexture[totalArrowNumb].getWidth(), pointTexture[totalArrowNumb].getHeight() };
-	pointRect[accuracyNumb] = { *screenUnit, toInt(*screenUnit * 10 / 3), pointTexture[accuracyNumb].getWidth(), pointTexture[accuracyNumb].getHeight() };
-	pointRect[pressedArrowNumb] = { *screenUnit, toInt(*screenUnit * 4), pointTexture[pressedArrowNumb].getWidth(), pointTexture[pressedArrowNumb].getHeight() };
-	pointRect[maxComboNumb] = { *screenUnit, toInt(*screenUnit * 14 / 3), pointTexture[maxComboNumb].getWidth(), pointTexture[maxComboNumb].getHeight() };
-	pointRect[wrongPressedNumb] = { *screenUnit, toInt(*screenUnit * 16 / 3), pointTexture[wrongPressedNumb].getWidth(), pointTexture[wrongPressedNumb].getHeight() };
+	pointRect[pointNumb] = setTextRect(1, 2, pointTexture[pointNumb].getWidth(), pointTexture[pointNumb].getHeight() );
+	pointRect[totalArrowNumb] = setTextRect(1, 8.0 / 3, pointTexture[totalArrowNumb].getWidth(), pointTexture[totalArrowNumb].getHeight() );
+	pointRect[accuracyNumb] = setTextRect(1, 10.0 / 3, pointTexture[accuracyNumb].getWidth(), pointTexture[accuracyNumb].getHeight() );
+	pointRect[pressedArrowNumb] = setTextRect(1, 4, pointTexture[pressedArrowNumb].getWidth(), pointTexture[pressedArrowNumb].getHeight() );
+	pointRect[maxComboNumb] = setTextRect(1, 14.0 / 3, pointTexture[maxComboNumb].getWidth(), pointTexture[maxComboNumb].getHeight() );
+	pointRect[wrongPressedNumb] = setTextRect(1, 16.0 / 3, pointTexture[wrongPressedNumb].getWidth(), pointTexture[wrongPressedNumb].getHeight() );
 }
 
 void ArrowTexture::createDefaultRect()
@@ -192,14 +228,14 @@ void ArrowTexture::createDefaultRect()
 	arrowSrcRect[right] = { arrow.getWidth() / 2,  arrow.getHeight() / 2,  arrow.getWidth() / 2,  arrow.getHeight() / 2 };
 
 	//texture to render to screen
-	*blankArrowDstRect = { *screenUnit, *screenUnit, *screenUnit * 7, *screenUnit };
-	pressedArrowDstRect[left] = { *screenUnit, *screenUnit, *screenUnit, *screenUnit };
-	pressedArrowDstRect[up] = { 3 * *screenUnit, *screenUnit, *screenUnit, *screenUnit };
-	pressedArrowDstRect[down] = { 5 * *screenUnit, *screenUnit, *screenUnit, *screenUnit };
-	pressedArrowDstRect[right] = { 7 * *screenUnit, *screenUnit, *screenUnit, *screenUnit };
+	*blankArrowDstRect = setScreenUnitRect(1, 1, 7, 1);
+	pressedArrowDstRect[left] = setScreenUnitRect(1, 1, 1, 1);
+	pressedArrowDstRect[up] = setScreenUnitRect(3, 1, 1, 1);
+	pressedArrowDstRect[down] = setScreenUnitRect(5, 1, 1, 1);
+	pressedArrowDstRect[right] = setScreenUnitRect(7, 1, 1, 1);
 }
 
-void DogeTexture::createDefaultRect() {
+void Character::createDefaultRect() {
 	delete[] muscleDogeRect;
 	delete[] cheemsSrcRect;
 	delete[] cheemsDstRect;
@@ -212,6 +248,9 @@ void DogeTexture::createDefaultRect() {
 	muscleDogeRect = new SDL_Rect[toInt(DOGE::TOTAL)];
 	cheemsSrcRect = new SDL_Rect[total];
 	cheemsDstRect = new SDL_Rect[total];
+	khaBankSrcRect = new SDL_Rect[total];
+	khaBankDstRect = new SDL_Rect;
+	bankVelo = *screenUnit / 8;
 
 	//texture to render from image
 	muscleDogeRect[toInt(DOGE::SOURCE_LEFT)] = { 0, 0,  muscleDoge.getWidth() / 3,  muscleDoge.getHeight() };
@@ -221,26 +260,39 @@ void DogeTexture::createDefaultRect() {
 	cheemsSrcRect[up] = { 0,  cheems.getHeight() / 2,  cheems.getWidth() / 2,  cheems.getHeight() / 2 };
 	cheemsSrcRect[down] = { cheems.getWidth() / 2,  cheems.getHeight() / 2,  cheems.getWidth() / 2,  cheems.getHeight() / 2 };
 	cheemsSrcRect[right] = { cheems.getWidth() / 2, 0,  cheems.getWidth() / 2,  cheems.getHeight() / 2 };
+	khaBankSrcRect[left] = { 0, 0,  khaBank.getWidth() / 2,  khaBank.getHeight() / 2 };
+	khaBankSrcRect[up] = { khaBank.getWidth() / 2, 0,  khaBank.getWidth() / 2,  khaBank.getHeight() / 2 };
+	khaBankSrcRect[down] = { 0, khaBank.getHeight() / 2,  khaBank.getWidth() / 2,  khaBank.getHeight() / 2 };
+	khaBankSrcRect[right] = { khaBank.getWidth() / 2,  khaBank.getHeight() / 2,  khaBank.getWidth() / 2,  khaBank.getHeight() / 2 };
 
 	//texture to render to screen
-	muscleDogeRect[toInt(DOGE::DESTINATION)] = { toInt(*screenUnit * 10), *screenUnit * 3, *screenUnit * 4, *screenUnit * 4 };
-	cheemsDstRect[left] = { toInt(*screenUnit * 9.5), *screenUnit * 5, toInt(*screenUnit * 1.5), *screenUnit * 2 };
-	cheemsDstRect[up] = { toInt(*screenUnit * 10.5), *screenUnit * 6, toInt(*screenUnit * 1.5), *screenUnit * 2 };
-	cheemsDstRect[down] = { toInt(*screenUnit * 12), *screenUnit * 6, toInt(*screenUnit * 1.5), *screenUnit * 2 };
-	cheemsDstRect[right] = { toInt(*screenUnit * 13), *screenUnit * 5, toInt(*screenUnit * 1.5), *screenUnit * 2 };
-
+	muscleDogeRect[toInt(DOGE::DESTINATION)] = setScreenUnitRect(10, 3, 4, 4);
+	cheemsDstRect[left] = setScreenUnitRect(9.5, 5, 1.5, 2);
+	cheemsDstRect[up] = setScreenUnitRect(10.5, 6, 1.5, 2);
+	cheemsDstRect[down] = setScreenUnitRect(12, 6, 1.5, 2);
+	cheemsDstRect[right] = setScreenUnitRect(13, 5, 1.5, 2);
+	*khaBankDstRect = setScreenUnitRect(16, 5, 2.5, 4);
 }
 
 void SettingTexture::createDefaultRect() {
+	delete[] buttonDstRect;
+	delete[] usingButton;
 
+	buttonDstRect = new SDL_Rect[static_cast<int>(CONTROL::TOTAL)];
+	usingButton = new bool[static_cast<int>(CONTROL::TOTAL)];
+
+	for (int type = 0; type < toInt(CONTROL::TOTAL); type++) {
+		buttonDstRect[type] = setTextRect(1, (type * 2 + 3) / 3.0, button[type].getWidth(), button[type].getHeight() );
+		usingButton[type] = true;
+	}
 }
 
 void MusicTexture::createDefaultRect()
 {
-	nameRect = { *screenUnit, *screenUnit * 7 / 3, nameText.getWidth(), nameText.getHeight() };
-	authorRect = { *screenUnit, toInt(*screenUnit * 3), authorText.getWidth(), authorText.getHeight() };
-	difficultyRect = { *screenUnit, toInt(*screenUnit * 11 / 3), difficultyText.getWidth(), difficultyText.getHeight() };
-	bpmRect = { *screenUnit, toInt(*screenUnit * 13 / 3), bpmText.getWidth(), bpmText.getHeight() };
+	nameRect = setTextRect( 0.75, 7.0 / 3, nameText.getWidth(), nameText.getHeight() );
+	authorRect = setTextRect(0.75, 3, authorText.getWidth(), authorText.getHeight() );
+	difficultyRect = setTextRect(0.75, 11.0 / 3, difficultyText.getWidth(), difficultyText.getHeight() );
+	bpmRect = setTextRect(0.75, 13.0 / 3, bpmText.getWidth(), bpmText.getHeight() );
 }
 
 
@@ -268,7 +320,7 @@ void ArrowTexture::renderPressedArrow(Event& event, Point& point)
 	}
 }
 
-void DogeTexture::renderDoge(Event& event)
+void Character::renderDoge(Event& event)
 {
 	int left = toInt(CONTROL::LEFT_ARROW),
 		up = toInt(CONTROL::UP_ARROW),
@@ -323,5 +375,19 @@ void DogeTexture::renderDoge(Event& event)
 				}
 			}
 		}
+	}
+}
+
+void Character::renderBank(Point& point) {
+	bankRender = (point.getCombo() >= 50);
+	if (bankRender || khaBankDstRect->x < *screenWidth) {
+		frame = (frame + 1) % 60;
+		if (!bankRender && khaBankDstRect->x < *screenWidth) {
+			khaBankDstRect->x += bankVelo;
+		}
+		if (bankRender && khaBankDstRect->x > *screenUnit * 13.5) {
+			khaBankDstRect->x -= bankVelo;
+		}
+		khaBank.render(renderer, khaBankDstRect, &khaBankSrcRect[abs(frame / 10 - 3)]);
 	}
 }

@@ -32,6 +32,7 @@ LTexture::LTexture() {
 //load resource to texture
 bool LTexture::loadFromFile(SDL_Renderer* renderer, string path) {
 	free();
+
 	bool success = true;
 	SDL_Surface* loadedImage = IMG_Load(path.c_str());
 	if (loadedImage == NULL) {
@@ -94,7 +95,7 @@ void LTexture::render(SDL_Renderer* renderer, SDL_Rect* renderRect, SDL_Rect* so
 
 //free the texture
 void LTexture::free() {
-	if (mTexture != NULL) {
+	if (this != nullptr && mTexture != NULL) {
 		SDL_DestroyTexture(mTexture);
 		mTexture = NULL;
 		mWidth = 0;
@@ -165,84 +166,6 @@ void LButton::render(SDL_Renderer* renderer, SDL_Rect* renderRect, SDL_Rect* sou
 
 
 
-//Window
-
-//pass the renderer value to the subclass
-void Window::setRenderer(Window& screen) {
-	renderer = screen.renderer;
-	screenUnit = screen.screenUnit;
-	screenWidth = screen.screenWidth;
-	screenHeight = screen.screenHeight;
-}
-
-//set the renderer parameters
-void Window::setScreenUnit(int number) {
-	screenUnit = new int(number);
-	screenWidth = new int (*screenUnit * 16);
-	screenHeight = new int (*screenUnit * 9);
-	cout << "Log [" << SDL_GetTicks() << "]: " << "Set screen resolution to " << *screenWidth << " x " << *screenHeight << endl;
-}
-
-void Window::defaultScreenUnit() {
-	int defaultScreenUnit = 80;
-	setScreenUnit(defaultScreenUnit);
-	cout << "Log [" << SDL_GetTicks() << "]: " << "Couldn't open file, using default resolution 1280 x 720" << endl;
-}
-
-//create window
-bool Window::createWindow() {
-	window = SDL_CreateWindow(windowTitle, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, *screenWidth, *screenHeight, 0);
-	if (window == NULL) {
-		cout << "Log [" << SDL_GetTicks() << "]: " << "Failed to create window" << endl;
-		loadErrorLog();
-		return false;
-	}
-	return true;
-}
-
-//create renderer
-bool Window::createRenderer() {
-	renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
-	if (renderer == NULL) {
-		renderer = SDL_CreateSoftwareRenderer(SDL_GetWindowSurface(window));
-		if (renderer == NULL) {
-			cout << "Log [" << SDL_GetTicks() << "]: " << "Failed to load the renderer" << endl;
-			return false;
-		}
-	}
-	else {
-		cout << "Log [" << SDL_GetTicks() << "]: " << "Renderer loaded successfully in " << renderer << endl;
-	}
-	return true;
-}
-
-//renderer present and clear functions
-void Window::clearRenderer() {
-	SDL_RenderClear(renderer);
-}
-
-void Window::presentRenderer() {
-	SDL_RenderPresent(renderer);
-}
-
-//free the screen
-void Window::free() {
-	SDL_DestroyRenderer(renderer);
-	renderer = NULL;
-	cout << "Log [" << SDL_GetTicks() << "]: " << "Renderer closed successfully" << endl;
-	SDL_DestroyWindow(window);
-	window = NULL;
-	cout << "Log [" << SDL_GetTicks() << "]: " << "Window closed successfully" << endl;
-}
-
-//get the renderer parameters
-
-int Window::getScreenUnit() {
-	return *screenUnit;
-}
-
-
-
 //Music
 
 //constructor
@@ -254,14 +177,14 @@ Music::Music()
 	velocity = 0;
 }
 
-Music::Music(string& _name, string& _singer, Uint32& _start, Uint32& _duration, int& _bpm, int& _velocity, const int& screenUnit)
+Music::Music(string& _name, string& _singer, Uint32& _start, Uint32& _duration, int& _bpm, double& _velocity)
 {
 	name = _name;
 	singer = _singer;
 	start = _start;
 	duration = _duration;
 	bpm = _bpm;
-	velocity = screenUnit / _velocity;
+	velocity = _velocity;
 }
 
 //load music from file
@@ -270,12 +193,13 @@ bool Music::loadFromFile(string path) {
 	if (!musicLoaded) {
 		string fileName = name + " -" + singer;
 		source = Mix_LoadMUS((path + "/Music/" + fileName + ".mp3").c_str());
-		if (source == NULL) {
-			cout << "Log [" << SDL_GetTicks() << "]: " << "Failed to load " << fileName << endl;
+
+		musicLoaded = (source != NULL);
+		if (musicLoaded) {
+			cout << "Log [" << SDL_GetTicks() << "]: " << fileName << " loaded successfully" << endl;
 		}
 		else {
-			musicLoaded = true;
-			cout << "Log [" << SDL_GetTicks() << "]: " << fileName << " loaded successfully" << endl;
+			cout << "Log [" << SDL_GetTicks() << "]: " << "Failed to load " << fileName << endl;
 		}
 	}
 	return musicLoaded;
@@ -287,10 +211,12 @@ void Music::playMusic(int loop) {
 }
 
 void Music::freeLoad() {
-	Mix_FreeMusic(source);
-	source = NULL;
-	musicLoaded = false;
-	cout << "Log [" << SDL_GetTicks() << "]: " << "Music load freed successfully" << endl;
+	if (source != nullptr) {
+		Mix_FreeMusic(source);
+		source = NULL;
+		musicLoaded = false;
+		cout << "Log [" << SDL_GetTicks() << "]: " << "Music load freed successfully" << endl;
+	}
 }
 
 void Music::free() {
@@ -330,7 +256,7 @@ int Music::getBpm() {
 	return bpm;
 }
 
-int Music::getVelocity() {
+double Music::getVelocity() {
 	return velocity;
 }
 
@@ -356,24 +282,26 @@ void Event::updateEvent() {
 }
 
 void Event::loadDefaultSetting() {
-	freeEventControl();
+	if (scanControl == nullptr || keyControl == nullptr) {
+		freeEventControl();
 
-	scanControl = new SDL_Scancode[toInt (CONTROL::TOTAL)];
-	keyControl = new SDL_Keycode[toInt (CONTROL::TOTAL)];
+		scanControl = new SDL_Scancode[toInt(CONTROL::TOTAL)];
+		keyControl = new SDL_Keycode[toInt(CONTROL::TOTAL)];
 
-	scanControl[toInt (CONTROL::LEFT_ARROW)] = SDL_SCANCODE_LEFT;
-	scanControl[toInt (CONTROL::UP_ARROW)] = SDL_SCANCODE_UP;
-	scanControl[toInt (CONTROL::DOWN_ARROW)] = SDL_SCANCODE_DOWN;
-	scanControl[toInt (CONTROL::RIGHT_ARROW)] = SDL_SCANCODE_RIGHT;
-	scanControl[toInt (CONTROL::CHOOSE)] = SDL_SCANCODE_SPACE;
-	scanControl[toInt (CONTROL::ESCAPE)] = SDL_SCANCODE_ESCAPE;
+		scanControl[toInt(CONTROL::LEFT_ARROW)] = SDL_SCANCODE_LEFT;
+		scanControl[toInt(CONTROL::UP_ARROW)] = SDL_SCANCODE_UP;
+		scanControl[toInt(CONTROL::DOWN_ARROW)] = SDL_SCANCODE_DOWN;
+		scanControl[toInt(CONTROL::RIGHT_ARROW)] = SDL_SCANCODE_RIGHT;
+		scanControl[toInt(CONTROL::CHOOSE)] = SDL_SCANCODE_SPACE;
+		scanControl[toInt(CONTROL::ESCAPE)] = SDL_SCANCODE_ESCAPE;
 
-	keyControl[toInt (CONTROL::LEFT_ARROW)] = SDL_GetKeyFromScancode(scanControl[toInt (CONTROL::LEFT_ARROW)]);
-	keyControl[toInt (CONTROL::UP_ARROW)] = SDL_GetKeyFromScancode(scanControl[toInt (CONTROL::UP_ARROW)]);
-	keyControl[toInt (CONTROL::DOWN_ARROW)] = SDL_GetKeyFromScancode(scanControl[toInt (CONTROL::DOWN_ARROW)]);
-	keyControl[toInt (CONTROL::RIGHT_ARROW)] = SDL_GetKeyFromScancode(scanControl[toInt (CONTROL::RIGHT_ARROW)]);
-	keyControl[toInt (CONTROL::CHOOSE)] = SDL_GetKeyFromScancode(scanControl[toInt (CONTROL::CHOOSE)]);
-	keyControl[toInt (CONTROL::ESCAPE)] = SDL_GetKeyFromScancode(scanControl[toInt (CONTROL::ESCAPE)]);
+		keyControl[toInt(CONTROL::LEFT_ARROW)] = SDL_GetKeyFromScancode(scanControl[toInt(CONTROL::LEFT_ARROW)]);
+		keyControl[toInt(CONTROL::UP_ARROW)] = SDL_GetKeyFromScancode(scanControl[toInt(CONTROL::UP_ARROW)]);
+		keyControl[toInt(CONTROL::DOWN_ARROW)] = SDL_GetKeyFromScancode(scanControl[toInt(CONTROL::DOWN_ARROW)]);
+		keyControl[toInt(CONTROL::RIGHT_ARROW)] = SDL_GetKeyFromScancode(scanControl[toInt(CONTROL::RIGHT_ARROW)]);
+		keyControl[toInt(CONTROL::CHOOSE)] = SDL_GetKeyFromScancode(scanControl[toInt(CONTROL::CHOOSE)]);
+		keyControl[toInt(CONTROL::ESCAPE)] = SDL_GetKeyFromScancode(scanControl[toInt(CONTROL::ESCAPE)]);
+	}
  }
 
 void Event::freeEventControl() {
@@ -382,18 +310,20 @@ void Event::freeEventControl() {
 	cout << "Log [" << SDL_GetTicks() << "]: " << "Event Control freed successfully" << endl;
 }
 
+void Event::passEventControl(Event* event)
+{
+	for (int key = 0; key < toInt(BUTTON::TOTAL); key++) {
+		scanControl[key] = event->scanControl[key];
+		keyControl[key] = event->keyControl[key];
+	}
+}
+
 bool Event::quit() {
 	return (e.type == SDL_QUIT);
 }
 
 bool Event::pause() {
-	if (keyState[scanControl[toInt(CONTROL::ESCAPE)]]) {
-		Mix_PauseMusic();
-		return true;
-	}
-	else {
-		return false;
-	}
+	return (keyState[scanControl[toInt(CONTROL::ESCAPE)]] || e.window.event == SDL_WINDOWEVENT_MINIMIZED);
 }
 
 void Event::checkInputText(string& inputText)
@@ -411,11 +341,6 @@ void Event::checkInputText(string& inputText)
 }
 
 //event check
-bool Event::checkKeyEvent()
-{
-	return (e.type == SDL_KEYDOWN);
-}
-
 bool Event::checkKeyState(CONTROL key) {
 	return keyState[scanControl[toInt(key)]];
 }
@@ -438,10 +363,6 @@ bool Event::checkKeyRepeat() {
 	return (e.key.repeat != 0);
 }
 
-bool Event::checkMouseRepeat() {
-	return mouseRepeat;
-}
-
 //get mouse state
 SDL_Point Event::getMousePos() {
 	return mousePos;
@@ -457,4 +378,147 @@ Uint32 Event::getMouseButton() {
 Uint32 Event::getEventType()
 {
 	return e.type;
+}
+
+Uint8 Event::getWindowEvent()
+{
+	return e.window.event;
+}
+
+SDL_Keycode Event::getKeyEvent()
+{
+	return e.key.keysym.sym;
+}
+
+void Event::getWindowParameter(int& windowWidth, int& windowHeight)
+{
+	windowWidth = e.window.data1;
+	windowHeight = e.window.data2;
+}
+
+
+
+//Window
+
+Window::Window()
+{
+	window = nullptr;
+	renderer = nullptr;
+	screenUnit = new int;
+	screenWidth = new int;
+	screenHeight = new int;
+	sizeChange = new bool;
+}
+
+//pass the renderer value to the subclass
+void Window::setRenderer(Window& screen) {
+	renderer = screen.renderer;
+	screenUnit = screen.screenUnit;
+	screenWidth = screen.screenWidth;
+	screenHeight = screen.screenHeight;
+	sizeChange = screen.sizeChange;
+}
+
+//set the renderer parameters
+void Window::setScreenUnit(int number) {
+	if (number != 0) {
+		*screenUnit = number;
+		*screenWidth = *screenUnit * 16;
+		*screenHeight = *screenUnit * 9;
+		*sizeChange = new bool(true);
+		cout << "Log [" << SDL_GetTicks() << "]: " << "Set screen resolution to " << *screenWidth << " x " << *screenHeight << endl;
+	}
+}
+
+void Window::defaultScreenUnit() {
+	int defaultScreenUnit = 80;
+	setScreenUnit(defaultScreenUnit);
+	cout << "Log [" << SDL_GetTicks() << "]: " << "Couldn't open file, using default resolution 1280 x 720" << endl;
+}
+
+//create window
+bool Window::createWindow() {
+	Uint32 initiate = SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE;
+	window = SDL_CreateWindow(windowTitle, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, *screenWidth, *screenHeight, initiate);
+
+	bool success = (window != NULL);
+	if (success) {
+		cout << "Log [" << SDL_GetTicks() << "]: " << "Window loaded successfully in " << window << endl;
+	}
+	else {
+		cout << "Log [" << SDL_GetTicks() << "]: " << endl;
+		loadErrorLog();
+	}
+	return success;
+}
+
+//create renderer
+bool Window::createRenderer() 
+{
+	renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
+	if (renderer == NULL) {
+		renderer = SDL_CreateSoftwareRenderer(SDL_GetWindowSurface(window));
+	}
+
+	bool success = (renderer != NULL);
+	if (success) {
+		SDL_RenderSetLogicalSize(renderer, *screenWidth, *screenHeight);
+		SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
+		clearRenderer();
+		cout << "Log [" << SDL_GetTicks() << "]: " << "Renderer loaded successfully in " << renderer << endl;
+	}
+	else {
+		cout << "Log [" << SDL_GetTicks() << "]: " << endl;
+		loadErrorLog();
+	}
+	return success;
+}
+
+//renderer present and clear functions
+void Window::clearRenderer() {
+	SDL_RenderClear(renderer);
+}
+
+void Window::presentRenderer() {
+	SDL_RenderPresent(renderer);
+}
+
+//free the screen
+void Window::free() {
+	SDL_DestroyRenderer(renderer);
+	renderer = NULL;
+	delete screenWidth;
+	delete screenHeight;
+	delete screenUnit;
+	delete sizeChange;
+	cout << "Log [" << SDL_GetTicks() << "]: " << "Renderer closed successfully" << endl;
+	SDL_DestroyWindow(window);
+	window = NULL;
+	cout << "Log [" << SDL_GetTicks() << "]: " << "Window closed successfully" << endl;
+}
+
+void Window::setDisplaySize(Event* event)
+{
+	switch (event->getWindowEvent()) {
+	case SDL_WINDOWEVENT_RESIZED: {
+		int windowWidth, windowHeight;
+		event->getWindowParameter(windowWidth, windowHeight);
+		int newScreenUnit = min(toInt(windowWidth / 16), toInt(windowHeight / 9));
+		if (*screenUnit != newScreenUnit) {
+			setScreenUnit(newScreenUnit);
+			SDL_RenderSetLogicalSize(renderer, *screenWidth, *screenHeight);
+			*sizeChange = true;
+		}
+		break;
+	}
+	case SDL_WINDOWEVENT_MAXIMIZED: {
+		SDL_DisplayMode mode;
+		if (SDL_GetCurrentDisplayMode(0, &mode) == 0) {
+			setScreenUnit(min(toInt(mode.w / 16), toInt(mode.h / 9)));
+			SDL_RenderSetLogicalSize(renderer, *screenWidth, *screenHeight);
+		}
+		break;
+	}
+	}
+
 }

@@ -23,7 +23,7 @@ bool initSDL();
 bool initWindow(Window& background, Event& event);
 
 //close window and SDL function
-void closeWindow(Window& background);
+void closeWindow(Window& background, Event& event);
 
 //quit SDL
 void quitSDL();

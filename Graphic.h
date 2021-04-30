@@ -16,7 +16,7 @@ using namespace std;
 
 class Graphic : protected Window {
 protected:
-	bool loaded = false;
+	bool textureLoaded = false;
 public:
 	Graphic();
 
@@ -31,69 +31,27 @@ public:
 	virtual void createDefaultRect() = 0;
 
 	~Graphic();
+
+	SDL_Rect setScreenUnitRect(double x, double y, double w, double h);
+
+	SDL_Rect setTextRect(double x, double y, int wText, int hText);
 };
 
 //menu texture struct
-class Button : public Graphic {
-
-	LButton* button;
-	SDL_Rect* buttonDstRect;
-	bool* usingButton;
-	int buttonChoose;
-
-public:
-
-	//constructor
-
-	Button();
-
-	Button(Window& screen);
-
-	//basic functions
-
-	bool load(const string& path);
-
-	void render();
-
-	void free();
-
-	//event functions
-
-	BUTTON eventHandle(Event& event);
-
-	BUTTON mouseEventHandle(Event& event);
-
-	BUTTON keyEventHandle(Event& event);
-
-	//render functions
-
-	void createDefaultRect();
-
-	void createMenuRect();
-
-	void createChooseMusic();
-
-	void createScoreRect();
-
-	void createPauseRect();
-
-	void createSettingRect();
-
-
-};
 
 class Background : public Graphic {
 	//background and the related parameters
-	LTexture background;
+	LTexture* background;
 	SDL_Rect* bgSourceRect;
 	SDL_Rect* bgDestinationRect;
 
 	//color strips and the related parameters
 	LTexture* colorStrip;
 	SDL_Rect* colorStripDstRect;
-	int yColorStripVelo = 0;
+	double currentColorPlace;
+	int yColorStripVelo;
 
-	LTexture fpsTexture;
+	LTexture* fpsTexture;
 	TTF_Font* fpsFont = nullptr;
 	SDL_Color fpsColor;
 	Uint32 currentTime,
@@ -122,8 +80,6 @@ public:
 	
 	//background moving function
 
-	void moveColorStrip();
-
 	void moveColorStrip(SDL_Rect& movingRect);
 
 	void backgroundTransition(BACKGROUND origin, BACKGROUND moving);
@@ -135,9 +91,63 @@ public:
 
 	void renderColorStrip(SDL_Rect &rectangle);
 
-	void renderColorStrip(BACKGROUND type);
+};
 
-	void renderBackground(BACKGROUND type);
+class Button : public Graphic {
+protected:
+
+	LButton* button;
+	SDL_Rect* buttonDstRect;
+	bool* usingButton;
+	int buttonChoose,
+		totalButton;
+
+public:
+
+	//constructor
+
+	Button();
+
+	Button(Window& screen);
+
+	//basic functions
+
+	bool load(const string& path);
+
+	void render();
+
+	void free();
+
+	//event functions
+
+	void pressAnyKeyRender();
+
+	int eventHandle(Event& event);
+
+	int mouseEventHandle(Event& event);
+
+	int keyEventHandle(Event& event);
+
+	//render functions
+
+	void buttonEnable(BUTTON type);
+
+	void buttonDisable(BUTTON type);
+
+	void createDefaultRect();
+
+	void createRect(TITLE type);
+
+	void createMenuRect();
+
+	void createChooseMusic();
+
+	void createScoreRect();
+
+	void createPauseRect();
+
+	void createSettingRect();
+
 
 };
 
@@ -157,6 +167,35 @@ public:
 	void createDefaultRect();
 
 	void setType(TITLE type);
+};
+
+class MusicTexture : public Graphic, private Music {
+	LTexture nameText,
+		authorText,
+		difficultyText,
+		bpmText;
+
+	SDL_Rect nameRect,
+		authorRect,
+		difficultyRect,
+		bpmRect;
+	TTF_Font* font;
+	SDL_Color color;
+public:
+	//constructor
+	MusicTexture(Window& screen);
+
+	//basic functions
+	bool load(const string& path);
+
+	void render();
+
+	void free();
+
+	void createDefaultRect();
+
+	//load music
+	bool loadSong(Music& song);
 };
 
 class Point : public Graphic {
@@ -208,6 +247,7 @@ public:
 	//render functions
 	void renderPointScreen();
 
+	int getCombo();
 
 };
 
@@ -222,7 +262,7 @@ class ArrowTexture : public Graphic {
 		pauseTime = 0,
 		spawnDuration = 0,
 		spawnRate = 0;
-	int velocity = 0;
+	double velocity = 0;
 
 	SDL_Rect* blankArrowDstRect;
 	SDL_Rect* arrowSrcRect;
@@ -252,7 +292,7 @@ public:
 
 	void scoreCheck(int& keyType, Point& point);
 
-	void updateArrowRange(Point& point);
+	void updateArrowRange(Point& point, Uint32 timePassed);
 
 	//render function
 
@@ -262,21 +302,29 @@ public:
 
 };
 
-class DogeTexture : public Graphic {
+class Character : public Graphic {
 	LTexture muscleDoge,
 		cheems,
-		smashedCheems;
+		smashedCheems,
+		khaBank;
 	Mix_Chunk* bonk;
 
 	SDL_Rect* muscleDogeRect;
 	SDL_Rect* cheemsSrcRect;
 	SDL_Rect* cheemsDstRect;
+	SDL_Rect* khaBankSrcRect;
+	SDL_Rect* khaBankDstRect;
+
+	int frame,
+		bankVelo;
+
+	bool bankRender;
 
 public:
 
 	//constructor
 
-	DogeTexture(Window& screen);
+	Character(Window& screen);
 
 	//basic functions
 
@@ -296,12 +344,17 @@ public:
 
 	void renderDoge(Event& event);
 
+	void renderBank(Point& point);
+
 };
 
-class SettingTexture : public Button {
+class SettingTexture : public Button, public Event {
 	TTF_Font* font;
+	SDL_Color color;
+	
+
 public:
-	SettingTexture(Window& screen);
+	SettingTexture(Window& screen, Event& event);
 
 	//basic functions
 	bool load(const string& path);
@@ -313,34 +366,11 @@ public:
 	//rendering functions
 
 	void createDefaultRect();
+
+	void hovered(CONTROL key);
+
+	bool changeKey(CONTROL changingKey, Event& event);
+
 };
 
-class MusicTexture : public Graphic, private Music {
-	LTexture nameText,
-		authorText,
-		difficultyText,
-		bpmText;
-
-	SDL_Rect nameRect, 
-		authorRect,
-		difficultyRect,
-		bpmRect;
-	TTF_Font* font;
-	SDL_Color color;
-public:
-	//constructor
-	MusicTexture(Window& screen);
-
-	//basic functions
-	bool load(const string& path);
-
-	void render();
-
-	void free();
-
-	void createDefaultRect();
-
-	//load music
-	bool loadSong(Music& song);
-};
 #endif
