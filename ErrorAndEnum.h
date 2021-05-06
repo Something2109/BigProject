@@ -14,8 +14,13 @@ using namespace std;
 //enumerators
 
 enum class BACKGROUND {
+	INTRO1,
+	INTRO2,
+	INTRO3,
+	START,
 	MENU,
 	SETTING,
+	SCORE,
 	CHOOSE_MUSIC,
 	GAME,
 	EXIT,
@@ -36,17 +41,24 @@ enum class BUTTON {
 	CONTINUE,
 	SAVE,
 	SETTING,
+	SCORE,
 	EXIT,
+	PRESS_KEY,
 	TOTAL,
 	NOT_CHOOSE = -1,
 };
 
 enum class TITLE {
+	INTRO,
+	START,
 	MENU,
-	PAUSE,
-	FINISH,
 	SETTING,
+	SCORE,
+	CHOOSE_MUSIC,
+	GAME,
+	FINISH,
 	TOTAL,
+	NO_TITLE,
 };
 
 enum class CONTROL {
@@ -58,17 +70,11 @@ enum class CONTROL {
 	ESCAPE,
 	TOTAL,
 	TOTAL_ARROW = 4,
-};
-
-enum class DOGE {
-	SOURCE_LEFT,
-	SOURCE_IDLE,
-	SOURCE_RIGHT,
-	DESTINATION,
-	TOTAL,
+	NOT_CHOOSE = -1,
 };
 
 enum class POINT {
+	NAME,
 	POINT,
 	TOTAL_ARROW,
 	ACCURACY,

@@ -13,19 +13,19 @@ using namespace std;
 
 //this file contains functions to initiate and close SDL, renderer, window
 
-// function contain all the initiation function
+// initiation function
 bool init(Window& background, Event& event);
 
-//SDL initiation function
+//SDL initiation
 bool initSDL();
 
-//Window initiation function
+//Window initiation
 bool initWindow(Window& background, Event& event);
 
-//close window and SDL function
-void closeWindow(Window& background);
+//close window
+void closeWindow(Window& background, Event& event);
 
-//quit SDL
+//close SDL
 void quitSDL();
 
 #endif

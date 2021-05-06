@@ -14,11 +14,11 @@ using namespace std;
 
 //this file contains basic classes
 
-//error loading function
+//error loading
 void loadErrorLog();
 
 
-//texture class handler
+//normal texture class
 class LTexture {
 protected:
 
@@ -40,7 +40,7 @@ public:
 	//load text from font
 	bool loadFromRenderedText(SDL_Renderer* renderer, string textureText, SDL_Color textColor, TTF_Font* font);
 
-	//render part of a texture (in the type of a rectangle) to the screen with given rectangle
+	//render texture to the screen with given rectangle
 	void render(SDL_Renderer* renderer, SDL_Rect* renderRect, SDL_Rect* sourceRect);
 
 	//free the texture
@@ -49,6 +49,7 @@ public:
 	//Destructor
 	~LTexture();
 
+	//set print color 
 	void setColor(Uint8 red, Uint8 green, Uint8 blue);
 
 	//get the width of the loaded picture
@@ -58,63 +59,24 @@ public:
 	int getHeight();
 };
 
+//button class
 class LButton : public LTexture {
 	bool hover = false;
 	bool click = false;
 
 public:
 
+	//indicate the button is hovered
 	void hovered();
 
+	//indicate the button is clicked
 	void clicked();
 
+	//render button  to the screen with given rectangle
 	void render(SDL_Renderer* renderer, SDL_Rect* renderRect, SDL_Rect* sourceRect);
 };
 
-//renderer
-class Window {
-
-	//window and its title
-	SDL_Window* window = NULL;
-	const char* windowTitle = "Game";
-
-protected:
-
-	//renderer and the related parameters
-	SDL_Renderer* renderer = nullptr;
-	int* screenUnit = nullptr;
-	int* screenWidth = nullptr;
-	int* screenHeight = nullptr;
-
-public:
-
-	//pass the renderer value to the subclass
-	void setRenderer(Window& screen);
-
-	//set the renderer parameters
-	void setScreenUnit(int number);
-
-	void defaultScreenUnit();
-
-	//create window
-	bool createWindow();
-
-	//create renderer
-	bool createRenderer();
-
-	void clearRenderer();
-
-	void presentRenderer();
-
-	//free the screen
-	void free();
-
-	//get the renderer parameters
-
-	int getScreenUnit();
-
-};
-
+//music infomation
 class Music {
 	Mix_Music* source = NULL;
 	bool musicLoaded = false;
@@ -125,78 +87,81 @@ protected:
 	Uint32 start = 0;
 	Uint32 duration = 0;
 	int bpm = 0;
-	int velocity = 0;
+	double velocity = 0;
 
 public:
+
+	//constructor
 	Music();
 
-	Music (string& _name, string& _singer, Uint32& _start, Uint32& _duration, int& _bpm, int& _velocity, const int& screenUnit);
+	Music (string& _name, string& _singer, Uint32& _start, Uint32& _duration, int& _bpm, double& _velocity);
 
-	//load music from file
+	//load music file
 	bool loadFromFile(string path);
 
 	//load music infomation
-
 	void playMusic(int loop);
 
+	//free music file
 	void freeLoad();
 
+	//free all the infomation
 	void free();
 
+	//destructor
 	~Music();
 
+	//pass the infomation to subclasses or other music parameters 
 	void getInfo(Music& song);
 
+	//pass the parameter to other 
 	Uint32 getStart();
 
 	Uint32 getDuration();
 
 	int getBpm();
 
-	int getVelocity();
+	double getVelocity();
 };
 
+//event handler
 class Event {
 	SDL_Event e;
 	SDL_Point mousePos = { 0, 0 };
 	Uint32 mouseButton = 0;
 	const Uint8* keyState = NULL;
-	SDL_Scancode* scanControl = NULL;
-	SDL_Keycode* keyControl = NULL;
 	bool quitProgram = false;
 	bool mouseRepeat = false;
-
+protected:
+	SDL_Scancode* scanControl = NULL;
+	SDL_Keycode* keyControl = NULL;
 public:
-	void loadEventCode(stringstream& file);
 
+	//load the control keys from a set of type and key
+	void loadEventCode(string& type, int& key);
+
+	//load default control key
 	void loadDefaultSetting();
 
+	//poll the new event
 	void updateEvent();
 
+	//free the event control 
 	void freeEventControl();
 
+	//pass to the subclasses or other event 
+	void passEventControl(Event* event);
+
+	//return if the quit event has been executed
 	bool quit();
 
+	//return if the user want to pause the game
 	bool pause();
 
-	bool changeKey(CONTROL changingKey) {
-		updateEvent();
-		if (e.type == SDL_KEYDOWN) {
-			SDL_Keycode keyChange = e.key.keysym.sym;
-			for (int type = 0; type < toInt(CONTROL::TOTAL); type++) {
-				if (keyChange == keyControl[type]) {
-					return false;
-				}
-			}
-			keyControl[toInt(changingKey)] = keyChange;
-			scanControl[toInt(changingKey)] = SDL_GetScancodeFromKey(keyChange);
-			return true;
-		}
-		return false;
-	}
+	//write the key control set to a file
+	void saveKey(ofstream& file);
 
 	//event check
-	bool checkKeyEvent();
 
 	bool checkKeyState(CONTROL key);
 
@@ -208,8 +173,6 @@ public:
 
 	bool checkMouseEvent();
 
-	bool checkMouseRepeat();
-
 	void checkInputText(string& inputText);
 
 	//get mouse state
@@ -219,6 +182,67 @@ public:
 
 	Uint32 getEventType();
 
+	Uint8 getWindowEvent();
+
+	SDL_Keycode getKeyEvent();
+
+	void getWindowParameter(int& windowWidth, int& windowHeight);
+};
+
+//renderer
+class Window {
+
+	//window and its title
+	const char* windowTitle = "Game";
+
+protected:
+
+	SDL_Window* window = NULL;
+
+	//renderer and the related parameters
+	SDL_Renderer* renderer = nullptr;
+	int* screenUnit = nullptr;
+	int* screenWidth = nullptr;
+	int* screenHeight = nullptr;
+	bool* sizeChange = nullptr;
+	bool* fullscreen = nullptr;
+
+public:
+	Window();
+
+	//pass the renderer value to the subclass
+	void setRenderer(Window& screen);
+
+	//set the renderer parameters
+	void setScreenUnit(int number);
+
+	//set the renderer parameters to default values
+	void defaultScreenUnit();
+
+	//create window
+	bool createWindow();
+
+	//set renderer parameters as the change of window
+	void setDisplaySize(Event* event);
+
+	//save the parameters to a file
+	void saveParameter(ofstream& file);
+
+	//create renderer
+	bool createRenderer();
+
+	//clear the current renderer
+	void clearRenderer();
+
+	//present the current renderer
+	void presentRenderer();
+
+	//free the window
+	void free();
+
+	SDL_Renderer* getRenderer() {
+		return renderer;
+	}
 };
 
 
