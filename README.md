@@ -1,9 +1,9 @@
     **The Funny Doge Game**
   -- An Audition type game --
 
-CONTROL
 
     **The default setting**
+* Default resolution: 1280 x 720 
 * Basic Keys (can change):
 Arrow Button Left  - Left Arrow  - Change to the previous song in Choose Music Screen
 Arrow Button Right - Right Arrow - Change to the next song in Choose Music Screen
