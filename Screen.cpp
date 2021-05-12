@@ -15,13 +15,33 @@ Screen::Screen()
 {
 	background = nullptr;
 	button = nullptr;
+	title = nullptr;
 	event = nullptr;
 	arrow = nullptr;
-	doge = nullptr;
+	character = nullptr;
 	music = nullptr;
 	setting = nullptr;
 	point = nullptr;
 
+	titleType = TITLE::MENU;
+	quit = false;
+	choose = BUTTON::NOT_CHOOSE;
+}
+
+Screen::Screen(Window& window)
+{
+	setRenderer(window);
+	background = nullptr;
+	button = nullptr;
+	title = nullptr;
+	event = nullptr;
+	arrow = nullptr;
+	character = nullptr;
+	music = nullptr;
+	setting = nullptr;
+	point = nullptr;
+
+	titleType = TITLE::MENU;
 	quit = false;
 	choose = BUTTON::NOT_CHOOSE;
 }
@@ -34,10 +54,47 @@ void Screen::pass(Screen* screen)
 	title = screen->title;
 	event = screen->event;
 	arrow = screen->arrow;
-	doge = screen->doge;
+	character = screen->character;
 	music = screen->music;
 	setting = screen->setting;
 	point = screen->point;
+}
+
+void Screen::createRect()
+{
+	if (background != nullptr) {
+		background->createDefaultRect();
+	}
+	if (title != nullptr) {
+		title->createDefaultRect();
+	}
+	if (button != nullptr) {
+		button->createRect(titleType);
+	}
+	if (arrow != nullptr) {
+		arrow->createDefaultRect();
+	}
+	if (character != nullptr) {
+		character->createDefaultRect();
+	}
+	if (music != nullptr) {
+		music->createDefaultRect();
+	}
+	if (setting != nullptr) {
+		setting->createDefaultRect();
+	}
+	if (point != nullptr) {
+		point->createDefaultRect();
+	}
+}
+
+void Screen::windowHandle()
+{
+	setDisplaySize(event);
+	if (*sizeChange) {
+		createRect();
+		*sizeChange = false;
+	}
 }
 
 
@@ -48,8 +105,10 @@ Menu::Menu(Window& screen) {
 	setRenderer(screen);
 	background = new Background(screen);
 	button = new Button(screen);
-	event = new Event();
 	title = new Title(screen);
+	character = new Character(screen);
+	event = new Event();
+	titleType = TITLE::MENU;
 }
 
 Menu::Menu(Window& screen, Event& _event)
@@ -57,8 +116,10 @@ Menu::Menu(Window& screen, Event& _event)
 	setRenderer(screen);
 	background = new Background(screen);
 	button = new Button(screen);
-	event = &_event;
 	title = new Title(screen);
+	character = new Character(screen);
+	event = &_event;
+	titleType = TITLE::MENU;
 }
 
 bool Menu::load(const string& path)
@@ -67,17 +128,20 @@ bool Menu::load(const string& path)
 	success = success && background->load(path);
 	success = success && button->load(path);
 	success = success && title->load(path);
+	success = success && character->load(path);
 	if (success) {
-		background->setType(BACKGROUND::EXIT);
-		title->setType(TITLE::MENU);
-		event->loadDefaultSetting();
-		button->createMenuRect();
-		title->createDefaultRect();
+		titleType = TITLE::INTRO;
+		background->setType(BACKGROUND::START);		
+		button->createRect(titleType);
+		title->setType(titleType);
+		character->createRect(titleType);
 		cout << "Log [" << SDL_GetTicks() << "]: " << "Menu loaded successfully" << endl;
 	}
 	else {
 		cout << "Log [" << SDL_GetTicks() << "]: " << "Failed to load menu" << endl;
 	}
+	cout << endl;
+
 	return success;
 }
 
@@ -85,68 +149,167 @@ void Menu::run()
 {
 	string path = "Resource";
 	if (load(path)) {
-		while (!quit && !event->checkKeyEvent() && event->getMouseButton() == 0) {
-			clearRenderer();
-			event->updateEvent();
-			background->render();
-			quit = event->quit();
-			presentRenderer();
-		}
-		if (!quit) {
-			background->backgroundTransition(BACKGROUND::EXIT, BACKGROUND::MENU);
-		}
-		while (!quit) {
-			clearRenderer();
-
-			event->updateEvent();
-			choose = button->eventHandle(*event);
-
-			background->render();
-			title->render();
-			button->render();
-			presentRenderer();
-
-			changeScreen();
-
-			quit = quit || event->quit();
-		}
+		renderIntro(); 
+		renderMenu();
 	}
 	free();
 }
 
 void Menu::changeScreen()
 {
-	switch (choose) {
-		case BUTTON::PLAY: {
-			background->backgroundTransition(BACKGROUND::MENU, BACKGROUND::CHOOSE_MUSIC);
-			ChooseMusic chooseMusic(this);
-			chooseMusic.run();
-			break;
-		}
-		case BUTTON::SETTING: {
-			background->backgroundTransition(BACKGROUND::MENU, BACKGROUND::SETTING);
-			Setting setting(this);
-			setting.run();
-			button->createMenuRect();
-			if (!event->quit()) {
-				background->backgroundTransition(BACKGROUND::SETTING, BACKGROUND::MENU);
+	if (event->choose()) {
+		switch (choose) {
+			case BUTTON::PLAY: {
+				background->backgroundTransition(BACKGROUND::MENU, BACKGROUND::CHOOSE_MUSIC, *event);
+				ChooseMusic chooseMusic(this);
+				chooseMusic.run();
+				button->createRect(titleType);
+				title->setType(titleType);
+				character->createRect(titleType);
+				break;
 			}
-			break;
-		}
-		case BUTTON::EXIT: {
-			quit = true;
-			break;
+			case BUTTON::SETTING: {
+				background->backgroundTransition(BACKGROUND::MENU, BACKGROUND::SETTING, *event);
+				Setting setting(this);
+				setting.run();
+				if (!event->quit()) {
+					background->backgroundTransition(BACKGROUND::SETTING, BACKGROUND::MENU, *event);
+				}
+				button->createRect(titleType);
+				title->setType(titleType);
+				character->createRect(titleType);
+				break;
+			}
+			case BUTTON::EXIT: {
+				quit = true;
+				background->backgroundTransition(BACKGROUND::MENU, BACKGROUND::EXIT, *event);
+				break;
+			}
+			case BUTTON::SCORE: {
+				background->backgroundTransition(BACKGROUND::MENU, BACKGROUND::SCORE, *event);
+				Score score(this);
+				score.run();
+				button->createRect(titleType);
+				title->setType(titleType);
+				character->createRect(titleType);
+				break;
+			}
 		}
 	}
-	title->setType(TITLE::MENU);
 }
 
 void Menu::free()
 {
 	background->free();
 	button->free();
-	event->freeEventControl();
 	title->free();
+	character->free();
+
+	delete background;
+	delete button;
+	delete title;
+	delete character;
+	background = nullptr;
+	button = nullptr;
+	title = nullptr;
+	character = nullptr;
+	
+	cout << "Log [" << SDL_GetTicks() << "]: " << "Menu freed successfully" << endl;
+	cout << endl;
+}
+
+void Menu::renderIntro()
+{
+	Uint32 time;
+
+	if (!quit) {
+		background->backgroundTransition(BACKGROUND::INTRO1, BACKGROUND::INTRO2, *event);
+		title->setType(TITLE::INTRO);
+		quit = event->quit() || event->checkKeyEventDown(CONTROL::CHOOSE);
+		time = SDL_GetTicks() + 3000;
+		while (!quit && SDL_GetTicks() < time) {
+			windowHandle();
+			event->updateEvent();
+
+			clearRenderer();
+			background->render();
+			button->render();
+			title->render();
+			presentRenderer();
+
+			quit = event->quit() || event->checkKeyEventDown(CONTROL::CHOOSE);
+		}
+	}
+
+	if (!quit) {
+		background->backgroundTransition(BACKGROUND::INTRO2, BACKGROUND::INTRO3, *event);
+		title->setType(TITLE::NO_TITLE);
+		quit = event->quit() || event->checkKeyEventDown(CONTROL::CHOOSE);
+		time = SDL_GetTicks() + 3000;
+		while (!quit && SDL_GetTicks() < time) {
+			windowHandle();
+			event->updateEvent();
+
+			clearRenderer();
+			background->render();
+			button->render();
+			character->renderIntro();
+			presentRenderer();
+
+			quit = event->quit() || event->checkKeyEventDown(CONTROL::CHOOSE);
+		}
+	}
+
+	if (!quit) {
+		background->backgroundTransition(BACKGROUND::INTRO3, BACKGROUND::START, *event);
+		title->setType(TITLE::START);
+		quit = event->quit() || event->checkKeyEventDown(CONTROL::CHOOSE);
+		while (!quit && event->e.type != SDL_KEYDOWN && event->getMouseButton() == 0) {
+			windowHandle();
+			event->updateEvent();
+
+			clearRenderer();
+			background->render();
+			button->render();
+			title->render();
+			character->renderStart();
+			button->pressAnyKeyRender();
+			presentRenderer();
+
+			quit = event->quit();
+		}
+		if (!quit) {
+			background->backgroundTransition(BACKGROUND::START, BACKGROUND::MENU, *event);
+		}
+	}
+	quit = event->quit();
+}
+
+void Menu::renderMenu()
+{
+	titleType = TITLE::MENU;
+	background->setType(BACKGROUND::MENU);
+	button->createRect(titleType);
+	title->setType(titleType);
+	character->createRect(titleType);
+
+	while (!quit) {
+
+		windowHandle();
+		event->updateEvent();
+
+		clearRenderer();
+		background->render();
+		button->render();
+		title->render();		
+		character->renderIntro();
+		presentRenderer();
+
+		choose = static_cast<BUTTON>(button->eventHandle(*event));
+		changeScreen();
+
+		quit = quit || event->quit();
+	}
 }
 
 
@@ -155,10 +318,10 @@ void Menu::free()
 
 ChooseMusic::ChooseMusic(Screen* screen)
 {
-	setRenderer(*screen);
 	pass(screen);
 	music = new MusicTexture(*screen);
 	musicChoose = 0;
+	titleType = TITLE::CHOOSE_MUSIC;
 }
 
 bool ChooseMusic::load(const string& path)
@@ -166,15 +329,23 @@ bool ChooseMusic::load(const string& path)
 	bool success = true;
 	success = success && background->load(path);
 	success = success && button->load(path);
-	success = success && loadMusicFile(musicList, path, *screenUnit);
+	success = success && title->load(path);
+	success = success && loadMusicFile(path);
 	success = success && music->load(path);
 	success = success && music->loadSong(musicList[musicChoose]);
 	success = success && musicList[musicChoose].loadFromFile(path);
 	if (success) {
-		event->loadDefaultSetting();
-		button->createChooseMusic();
+		background->setType(BACKGROUND::CHOOSE_MUSIC);
+		button->createRect(titleType);
+		title->setType(titleType);
+		character->createRect(titleType);
 		musicList[musicChoose].playMusic(-1);
+		cout << "Log [" << SDL_GetTicks() << "]: " << "Music choose menu loaded successfully" << endl;
 	}
+	else {
+		cout << "Log [" << SDL_GetTicks() << "]: " << "Failed to load music choose menu" << endl;
+	}
+	cout << endl;
 	return success;
 }
 
@@ -183,42 +354,49 @@ void ChooseMusic::run()
 	string path = "Resource";
 	if (load(path)) {
 		while (!quit) {
+			windowHandle();
 			event->updateEvent();
 
-			choose = button->eventHandle(*event);
 			clearRenderer();
 			background->render();
-			music->render();
 			button->render();
+			title->render();
+			character->renderChooseMusic();
+			music->render();
 			presentRenderer();
+
+			choose = static_cast<BUTTON>(button->eventHandle(*event));
 			changeMusic();
 			changeScreen();
 		}
 	}
 	Mix_HaltMusic();
-	button->createMenuRect();
+	free();
+	button->createRect(TITLE::MENU);
 }
 
 void ChooseMusic::changeScreen()
 {
-	switch (choose) {
-		case BUTTON::PLAY: {
-			Mix_HaltMusic();
-			background->backgroundTransition(BACKGROUND::CHOOSE_MUSIC, BACKGROUND::GAME);
-			Game game(this, musicList[musicChoose]);
-			game.run();
-			quit = true;
-			break;
-		}
-		case BUTTON::EXIT: {
-			quit = true;
-			background->backgroundTransition(BACKGROUND::CHOOSE_MUSIC, BACKGROUND::MENU);
-			break;
-		}
-		default: {
-			quit = event->quit() || event->pause();
-			if (event->pause()) {
-				background->backgroundTransition(BACKGROUND::CHOOSE_MUSIC, BACKGROUND::MENU);
+	if (event->choose()) {
+		switch (choose) {
+			case BUTTON::PLAY: {
+				Mix_HaltMusic();
+				background->backgroundTransition(BACKGROUND::CHOOSE_MUSIC, BACKGROUND::GAME, *event);
+				Game game(this, musicList[musicChoose]);
+				game.run();
+				quit = true;
+				break;
+			}
+			case BUTTON::EXIT: {
+				quit = true;
+				background->backgroundTransition(BACKGROUND::CHOOSE_MUSIC, BACKGROUND::MENU, *event);
+				break;
+			}
+			default: {
+				quit = event->quit() || event->pause();
+				if (event->pause()) {
+					background->backgroundTransition(BACKGROUND::CHOOSE_MUSIC, BACKGROUND::MENU, *event);
+				}
 			}
 		}
 	}
@@ -226,29 +404,44 @@ void ChooseMusic::changeScreen()
 
 void ChooseMusic::free()
 {
+	musicList[musicChoose].freeLoad();
 	musicList.erase(musicList.begin(), musicList.end());
 	music->free();
-	musicList[musicChoose].freeLoad();
+
+	delete music;
+	music = nullptr;
+
+	cout << "Log [" << SDL_GetTicks() << "]: " << "Music choose menu freed successfully" << endl;
+	cout << endl;
 }
 
-void ChooseMusic::changeMusic()
+void ChooseMusic::changeMusic()   
 {
-	string path = "Resource";
-	if ((event->checkKeyEventDown(CONTROL::LEFT_ARROW) && !event->checkKeyRepeat()) || (choose == BUTTON::CHANGE_SONG_LEFT)) {
+	bool musicChange = false;
+	if ((event->checkKeyEventDown(CONTROL::LEFT_ARROW)) || (choose == BUTTON::CHANGE_SONG_LEFT && event->choose())) {
 		Mix_HaltMusic();
 		musicList[musicChoose].freeLoad();
-		musicChoose = (musicChoose - 1) % musicList.size();
-		musicList[musicChoose].loadFromFile(path);
-		music->loadSong(musicList[musicChoose]);
-		musicList[musicChoose].playMusic(-1);
+		musicChoose = (musicChoose - 1 + toInt(musicList.size())) % musicList.size();
+		musicChange = true;
 	}
-	if ((event->checkKeyEventDown(CONTROL::RIGHT_ARROW) && !event->checkKeyRepeat()) || (choose == BUTTON::CHANGE_SONG_RIGHT)) {
+	if ((event->checkKeyEventDown(CONTROL::RIGHT_ARROW)) || (choose == BUTTON::CHANGE_SONG_RIGHT && event->choose())) {
 		Mix_HaltMusic();
 		musicList[musicChoose].freeLoad();
-		musicChoose = (musicChoose - 1) % musicList.size();
-		musicList[musicChoose].loadFromFile(path);
-		music->loadSong(musicList[musicChoose]);
-		musicList[musicChoose].playMusic(-1);
+		musicChoose = (musicChoose + 1) % musicList.size();
+		musicChange = true;
+	}
+
+	if (musicChange) {
+		string path = "Resource";
+		musicChange = musicList[musicChoose].loadFromFile(path) && music->loadSong(musicList[musicChoose]);
+		if (musicChange) {
+			musicList[musicChoose].playMusic(-1);
+			cout << "Log [" << SDL_GetTicks() << "]: " << "Music changed successfully" << endl;
+		}
+		else {
+			changeMusic();
+		}
+		cout << endl;
 	}
 }
 
@@ -262,6 +455,7 @@ Game::Game(Window& window)
 	background = new Background(window);
 	button = new Button(window);
 	event = new Event();
+	titleType = TITLE::GAME;
 }
 
 Game::Game(Screen* screen, Music& _song)
@@ -269,9 +463,9 @@ Game::Game(Screen* screen, Music& _song)
 	setRenderer(*screen);
 	pass(screen);
 	arrow = new ArrowTexture(*screen);
-	doge = new DogeTexture(*screen);
 	point = new Point(*screen);
 	song = &_song;
+	titleType = TITLE::GAME;
 }
 
 bool Game::load(const string& path)
@@ -282,17 +476,20 @@ bool Game::load(const string& path)
 	success = success && button->load(path);
 	success = success && title->load(path);
 	success = success && arrow->load(path);
-	success = success && doge->load(path);
+	success = success && character->load(path);
 	success = success && point->load(path);
 	success = success && song->loadFromFile(path);
 	if (success) {
 		background->setType(BACKGROUND::GAME);
-		title->setType(TITLE::PAUSE);
-		button->createPauseRect();
-		title->createDefaultRect();
-		arrow->createDefaultRect();
-		doge->createDefaultRect();
+		button->createRect(titleType);
+		title->setType(titleType);
+		character->createRect(titleType);
+		cout << "Log [" << SDL_GetTicks() << "]: " << "Game loaded successfully" << endl;
 	}
+	else {
+		cout << "Log [" << SDL_GetTicks() << "]: " << "Failed to load game" << endl;
+	}
+	cout << endl;
 	return success;
 }
 
@@ -303,26 +500,10 @@ void Game::run()
 		arrow->setTimeline(*song);
 		while (!quit) {
 			time = SDL_GetTicks();
+			windowHandle();
 
 			if (!pause) {
-				//event handle
-				event->updateEvent();
-
-				clearRenderer();
-				background->render();
-				//render texture
-				arrow->updateArrowRange(*point);
-				point->render();
-				arrow->renderPressedArrow(*event, *point);
-				arrow->render();
-				doge->renderDoge(*event);
-				presentRenderer();
-
-				//arrow spawn mechanism
-				arrow->addArrow(time);
-
-				pause = event->pause();
-				quit = !Mix_PlayingMusic() || event->quit();
+				renderGame();
 			}
 			else {
 				renderPause();
@@ -332,77 +513,157 @@ void Game::run()
 		}
 		Mix_HaltMusic();
 		cout << "Log [" << SDL_GetTicks() << "]: " << "Game ending time: " << SDL_GetTicks() << endl;
-
+		cout << endl;
 		quit = (quit && pause) || !point->loadPointWindow(path) || event->quit();
-		title->setType(TITLE::FINISH);
 		if (!quit) {
 			renderScoreScreen();
 		}
 	}
-	button->createMenuRect();
+	if (!event->quit()) {
+		background->backgroundTransition(BACKGROUND::GAME, BACKGROUND::MENU, *event);
+	}
 	free();
-	background->backgroundTransition(BACKGROUND::GAME, BACKGROUND::MENU);
 }
 
 void Game::changeScreen()
 {
-	switch (choose) {
-	case BUTTON::CONTINUE: {
-		Mix_ResumeMusic();
-		pause = false;
-		break;
-	}
-	case BUTTON::EXIT: {
-		quit = true;
-		break;
-	}
+	if (event->choose()) {
+		switch (choose) {
+			case BUTTON::PLAY: {
+				changePlayerName();
+				break;
+			}
+			case BUTTON::CONTINUE: {
+				Mix_ResumeMusic();
+				pause = false;
+				break;
+			}
+			case BUTTON::SETTING: {
+				background->backgroundTransition(BACKGROUND::GAME, BACKGROUND::SETTING, *event);
+				Setting setting(this);
+				setting.run();
+				if (!event->quit()) {
+					background->backgroundTransition(BACKGROUND::SETTING, BACKGROUND::GAME, *event);
+				}
+				button->createRect(titleType);
+				title->setType(titleType);
+				character->createRect(titleType);
+				break;
+			}
+			case BUTTON::EXIT: {
+				quit = true;
+				break;
+			}
+		}
 	}
 }
 
 void Game::free()
 {
 	arrow->free();
-	doge->free();
 	point->free();
 	song->freeLoad();
+
+	delete arrow;
+	delete point;
+	arrow = nullptr;
+	point = nullptr;
+
+	cout << "Log [" << SDL_GetTicks() << "]: " << "Game screen freed successfully" << endl;
+	cout << endl;
+}
+
+void Game::renderGame()
+{
+	//event handle
+	event->updateEvent();
+	arrow->updateArrowRange(*point, (time - lastPauseTime));
+	arrow->addArrow(time);
+
+	clearRenderer();
+	background->render();
+	point->render();
+	arrow->renderPressedArrow(*event, *point);
+	arrow->render();
+	character->renderDoge(*event);
+	character->renderBank(*point);
+	presentRenderer();
+
+	//arrow spawn mechanism
+	pause = event->pause();
+	quit = !Mix_PlayingMusic() || event->quit();
+
 }
 
 void Game::renderPause()
 {
+	Mix_PauseMusic();
+
 	//event handle
 	event->updateEvent();
+	arrow->addPauseTime(time - lastPauseTime);
 
 	clearRenderer();
 	background->render();
 	title->render();
 	button->render();
-	choose = button->eventHandle(*event);
 	presentRenderer();
 
-	arrow->addPauseTime(time - lastPauseTime);
+	choose = static_cast<BUTTON>(button->eventHandle(*event));
 	changeScreen();
 	quit = quit || event->quit();
 }
 
 void Game::renderScoreScreen()
 {
-	button->createScoreRect();
-
+	string path = "Resource";
+	title->setType(TITLE::FINISH);
+	button->createRect(TITLE::FINISH);
+	SDL_StartTextInput();
 	while (!quit) {
+		windowHandle();
 		event->updateEvent();
 
-		choose = button->eventHandle(*event);
 		clearRenderer();
 		background->render();
-		title->render();
 		button->render();
+		title->render();
 		point->renderPointScreen();
-		doge->renderDoge(*event);
+		character->renderDoge(*event);
 		presentRenderer();
 
-		quit = event->quit() || event->pause() || (choose == BUTTON::EXIT);
+		choose = point->eventHandle(*event);
+		if (choose == BUTTON::NOT_CHOOSE) {
+			choose = static_cast<BUTTON>(button->eventHandle(*event));
+		}
+		changeScreen();
+		quit = quit || event->quit() || event->pause();
 	}
+	point->saveScore(path);
+	SDL_StopTextInput();
+}
 
+void Game::changePlayerName() {
+	button->buttonDisable(BUTTON::EXIT);
+	SDL_StartTextInput();
+	while (!quit) {
+		windowHandle();
+		event->updateEvent();
+
+		clearRenderer();
+		background->render();
+		button->render();
+		title->render();
+		point->renderPointScreen();
+		character->renderDoge(*event);
+		presentRenderer();
+
+		point->nameEdit(*event);
+		quit = event->quit() || (event->e.key.keysym.sym == SDLK_RETURN);
+	}
+	SDL_StopTextInput();
+	button->buttonEnable(BUTTON::EXIT);
+	quit = false;
 }
 
 
@@ -410,15 +671,30 @@ void Game::renderScoreScreen()
 //Setting
 
 Setting::Setting(Screen* screen) {
-	setRenderer(*screen);
 	pass(screen);
+	setting = new SettingTexture(*screen, *event, *button);
+	settingChange = false;
+	titleType = TITLE::SETTING;
 }
 
 bool Setting::load(const string& path)
 {
-	button->createSettingRect();
-	title->setType(TITLE::SETTING);
-	return true;
+	bool success = true;
+	success = success && background->load(path);
+	success = success && button->load(path);
+	success = success && title->load(path);
+	success = success && setting->load(path);
+	if (success) {
+		background->setType(BACKGROUND::SETTING);
+		button->createRect(titleType);
+		title->setType(titleType);
+		cout << "Log [" << SDL_GetTicks() << "]: " << "Setting menu loaded successfully" << endl;
+	}
+	else {
+		cout << "Log [" << SDL_GetTicks() << "]: " << "Failed to load setting menu" << endl;
+	}
+	cout << endl;
+	return success;
 }
 
 void Setting::run()
@@ -426,18 +702,19 @@ void Setting::run()
 	string path = "Resource";
 	if (load(path)) {
 		while (!quit) {
+			windowHandle();
 			event->updateEvent();
-			choose = button->eventHandle(*event);
 
 			clearRenderer();
 			background->render();
 			title->render();
 			button->render();
+			setting->render();
 			presentRenderer();
 
-			quit = event->quit() || event->pause();
-
+			choose = static_cast<BUTTON>(eventHandle());
 			changeScreen();
+			quit = quit || event->quit() || event->pause();
 		}
 	}
 	free();
@@ -445,303 +722,155 @@ void Setting::run()
 
 void Setting::changeScreen()
 {
-	switch (choose) {
-		case BUTTON::SAVE: {
-			break;
-		}
-		case BUTTON::EXIT: {
-			quit = true;
-			break;
+	if (event->choose()) {
+		switch (choose) {
+			case BUTTON::SAVE: {
+				event->passEventControl(setting);
+				button->buttonDisable(BUTTON::SAVE);
+				break;
+			}
+			case BUTTON::EXIT: {
+				quit = true;
+				break;
+			}
+			default: {
+				changeKeyHandle();
+			}
 		}
 	}
 }
 
 void Setting::free()
 {
+	setting->free();
+
+	delete setting;
+	setting = nullptr;
+
+	cout << "Log [" << SDL_GetTicks() << "]: " << "Setting menu freed successfully" << endl;
+	cout << endl;
+}
+
+int Setting::eventHandle()
+{
+	int choosing = toInt(BUTTON::NOT_CHOOSE);
+	if (event->checkMouseEvent()) {
+		choosing = setting->mouseEventHandle(*event);
+		return ((choosing == toInt(BUTTON::NOT_CHOOSE) ? button->mouseEventHandle(*event) : choosing));
+	}
+	if (event->e.type == SDL_KEYDOWN) {
+		return button->keyEventHandle(*event);
+	}
+	return toInt(BUTTON::NOT_CHOOSE);
+}
+
+void Setting::changeKeyHandle() {
+	if (choose != BUTTON::NOT_CHOOSE) {
+		button->buttonDisable(BUTTON::SAVE);
+		CONTROL settingChoose = static_cast<CONTROL>(choose);
+		do {
+			windowHandle();
+			settingChange = setting->changeKey(settingChoose, *event);
+
+			clearRenderer();
+			background->render();
+			title->render();
+			button->render();
+			button->pressAnyKeyRender();
+			setting->hovered(settingChoose);
+			setting->render();
+			presentRenderer();
+
+			choose = static_cast<BUTTON>(eventHandle());
+			changeScreen();
+			quit = quit || event->quit() || event->pause();
+
+		} while (!quit && !settingChange);
+		choose = BUTTON::NOT_CHOOSE;
+		string path = "Resource";
+		setting->load(path);
+		button->buttonEnable(BUTTON::SAVE);
+		cout << "Log [" << SDL_GetTicks() << "]: " << "Button changed successfully" << endl;
+	}
 }
 
 
 
+//Score
 
+Score::Score(Screen* screen)
+{
+	pass(screen);
+	scoreChoose = 0;
+	titleType = TITLE::SCORE;
+}
 
+bool Score::load(const string& path)
+{
+	bool success = true;
+	success = success && background->load(path);
+	success = success && button->load(path);
+	success = success && title->load(path);
+	if (success) {
+		background->setType(BACKGROUND::SCORE);
+		button->createRect(titleType);
+		title->setType(titleType);
+		character->createRect(titleType);
+		cout << "Log [" << SDL_GetTicks() << "]: " << "Score loaded successfully" << endl;
+	}
+	else {
+		cout << "Log [" << SDL_GetTicks() << "]: " << "Failed to load score" << endl;
+	}
+	cout << endl;
 
+	return success;
+}
 
+void Score::run()
+{
+	string path = "Resource";
+	if (load("Resource")) {
+		while (!quit) {
 
+			windowHandle();
+			event->updateEvent();
 
+			clearRenderer();
+			background->render();
+			button->render();
+			title->render();
+			presentRenderer();
 
+			choose = static_cast<BUTTON>(button->eventHandle(*event));
+			changeScreen();
 
+			quit = quit || event->quit();
+		}
+	}
+	free();
+}
 
+void Score::changeScreen()
+{
+	if (event->choose()) {
+		switch (choose) {
+			case BUTTON::EXIT: {
+				quit = true;
+				background->backgroundTransition(BACKGROUND::SCORE, BACKGROUND::MENU, *event);
+				break;
+			}
+			default: {
+				quit = event->quit() || event->pause();
+				if (event->pause()) {
+					background->backgroundTransition(BACKGROUND::SCORE, BACKGROUND::MENU, *event);
+				}
+			}
+		}
+	}
+}
 
-
-
-//void menu(Window& screen, Background& background, Event& event, vector<Music>& musicList) {
-//	Button button(screen);
-//	bool quit = false;
-//	BUTTON choose = BUTTON::NOT_CHOOSE;
-//
-//	if (button.load("Resource")) {
-//		background.setType(BACKGROUND::MENU);
-//		button.createMenuRect();
-//		while (!quit) {
-//			event.updateEvent();
-//
-//			//cout << "Menu loop" << endl;
-//			screen.clearRenderer();
-//			choose = button.eventHandle(event);
-//
-//			background.render();
-//			button.render();
-//			changeMenuScreen(screen, background, button, event, musicList, choose, quit);
-//			screen.presentRenderer();
-//
-//		}
-//	}
-//}
-//
-//void chooseMusic(Window& screen, Background& background, Button& button, Event& event, vector<Music>& musicList)
-//{
-//	MusicTexture song(screen);
-//	bool quit = false;
-//	BUTTON choose = BUTTON::NOT_CHOOSE;
-//	int musicChoose = 0;
-//	string path = "Resource";
-//
-//	song.load(path);
-//	song.loadSong(musicList[musicChoose]);
-//	background.setType(BACKGROUND::CHOOSE_MUSIC);
-//	button.createChooseMusic();
-//	musicList[musicChoose].loadFromFile(path);
-//	musicList[musicChoose].playMusic(-1);
-//	while (!quit) {
-//		event.updateEvent();
-//
-//		choose = button.eventHandle(event);
-//		screen.clearRenderer();
-//		background.render();
-//		song.render();
-//		button.render();
-//		screen.presentRenderer();
-//		changeSong(song, event, musicList, choose, musicChoose);
-//		changeMusicScreen(screen, background, button, event, musicList, choose, musicChoose, quit);
-//	}
-//	Mix_HaltMusic();
-//	song.free();
-//	musicList[musicChoose].freeLoad();
-//	background.setType(BACKGROUND::MENU);
-//	button.createMenuRect();
-//}
-//
-////main game function
-//void game(Window& screen, Background& background, Button& button, Event& event, Music& song)
-//{
-//	//game texture
-//	ArrowTexture arrowTexture(screen);
-//	DogeTexture dogeTexture(screen);
-//
-//	Point point(screen);
-//
-//	//quit game
-//	BUTTON choose = BUTTON::NOT_CHOOSE;
-//	bool quit = false, 
-//		pause = false;
-//
-//	Uint32 lastPauseTime = 0,
-//		time = 0;
-//
-//	//load game resources
-//	if (!loadingGameResource(screen, arrowTexture, dogeTexture, song, point)) {
-//		cout << "Log [" << SDL_GetTicks() << "]: " << "Failed to loading game" << endl;
-//	}
-//	else {
-//		button.createPauseRect();
-//		background.setType(BACKGROUND::GAME);
-//		//pregame load
-//		arrowTexture.setTimeline(song);
-//
-//		//game loop
-//		while (!quit) {
-//			time = SDL_GetTicks();
-//
-//			//event handle
-//			event.updateEvent();
-//
-//			screen.clearRenderer();
-//			background.render();
-//
-//			if (!pause) {
-//				//render texture
-//				arrowTexture.updateArrowRange(point);
-//				point.render();
-//				arrowTexture.renderPressedArrow(event, point);
-//				arrowTexture.render();
-//				dogeTexture.renderDoge(event);
-//				screen.presentRenderer();
-//
-//				//arrow spawn mechanism
-//				arrowTexture.addArrow(time);
-//
-//				pause = event.pause();
-//				quit = !Mix_PlayingMusic() || event.quit();
-//			}
-//
-//			else {
-//				arrowTexture.addPauseTime(time - lastPauseTime);
-//				button.render();
-//				choose = button.eventHandle(event);
-//				screen.presentRenderer();
-//				changeGameScreen(lastPauseTime, choose, quit, pause);
-//
-//				quit = quit || event.quit();
-//			}
-//			lastPauseTime = time;
-//		}
-//		Mix_PauseMusic();
-//		cout << "Log [" << SDL_GetTicks() << "]: " << "Game ending time: " << SDL_GetTicks() << endl;
-//
-//		string path = "Resource";
-//		quit = (quit && pause) || !point.loadPointWindow(path) || event.quit();
-//		button.createScoreRect();
-//
-//		while (!quit) {
-//			event.updateEvent();
-//
-//			choose = button.eventHandle(event);
-//			screen.clearRenderer();
-//			background.render();
-//			button.render();
-//			point.renderPointScreen();
-//			dogeTexture.renderDoge(event);
-//			screen.presentRenderer();
-//
-//			quit = event.quit() || event.pause() || (choose == BUTTON::EXIT);
-//		}
-//		background.setType(BACKGROUND::MENU);
-//		button.createMenuRect();
-//	}
-//
-//	//free game resources
-//	freeGamesTexture(arrowTexture, dogeTexture, song, point);
-//}
-//
-//void setting(Window& screen, Background& background, Button& button, Event& event, Music& song) {
-//	bool quit = false;
-//	background.setType(BACKGROUND::SETTING);
-//	while (!quit) {
-//		event.updateEvent();
-//
-//		screen.clearRenderer();
-//		background.render();
-//		screen.presentRenderer();
-//
-//		quit = event.quit() || event.pause();
-//
-//	}
-//	background.setType(BACKGROUND::MENU);
-//
-//}
-//
-////loading resources
-//bool loadingGameResource(Window& screen, ArrowTexture& arrowTexture, DogeTexture &dogeTexture, Music& song, Point& point) {
-//	string path = "Resource";
-//	bool success = true;
-//
-//	//load the game texture
-//	success = success && arrowTexture.load(path);
-//	success = success && dogeTexture.load(path);
-//	success = success && song.loadFromFile(path);
-//	success = success && point.load(path);
-//
-//	return success;
-//}
-//
-////free all the game textures
-//void freeGamesTexture(ArrowTexture& arrowTexture, DogeTexture& dogeTexture, Music& song, Point& point) {
-//	arrowTexture.free();
-//	dogeTexture.free();
-//	song.freeLoad();
-//	point.free();
-//}
-//
-////event handler
-//void changeSong(MusicTexture& song, Event& event, vector<Music>& musicList, BUTTON& choose, int& musicChoose) {
-//	string path = "Resource";
-//	if ((event.checkKeyEventDown(CONTROL::LEFT_ARROW) && !event.checkKeyRepeat()) || (choose == BUTTON::CHANGE_SONG_LEFT)) {
-//		Mix_HaltMusic();
-//		musicList[musicChoose].freeLoad();
-//		musicChoose = (musicChoose - 1) % musicList.size();
-//		musicList[musicChoose].loadFromFile(path);
-//		song.loadSong(musicList[musicChoose]);
-//		musicList[musicChoose].playMusic(-1);
-//	}
-//	if ((event.checkKeyEventDown(CONTROL::RIGHT_ARROW) && !event.checkKeyRepeat()) || (choose == BUTTON::CHANGE_SONG_RIGHT)) {
-//		Mix_HaltMusic();
-//		musicList[musicChoose].freeLoad();
-//		musicChoose = (musicChoose - 1) % musicList.size();
-//		musicList[musicChoose].loadFromFile(path);
-//		song.loadSong(musicList[musicChoose]);
-//		musicList[musicChoose].playMusic(-1);
-//	}
-//}
-//
-//void changeGameScreen(Uint32& lastPauseTime, BUTTON& choose, bool& quit, bool& pause) {
-//	switch (choose) {
-//	case BUTTON::CONTINUE: {
-//		Mix_ResumeMusic();
-//		lastPauseTime = 0;
-//		pause = false;
-//		break;
-//	}
-//	case BUTTON::EXIT: {
-//		quit = true;
-//		break;
-//	}
-//	}
-//}
-//
-//void changeMenuScreen(Window& screen, Background& background, Button& button, Event& event, vector<Music>& musicList, BUTTON& choose, bool& quit) {
-//	switch (choose) {
-//		case BUTTON::PLAY: {
-//			background.backgroundTransition(BACKGROUND::MENU, BACKGROUND::CHOOSE_MUSIC);
-//			chooseMusic(screen, background, button, event, musicList);
-//			break;
-//		}
-//		case BUTTON::SETTING: {
-//			background.backgroundTransition(BACKGROUND::MENU, BACKGROUND::SETTING);
-//			setting(screen, background, button, event, musicList[0]);
-//			if (!event.quit()) {
-//				background.backgroundTransition(BACKGROUND::SETTING, BACKGROUND::MENU);
-//			}
-//			break;
-//		}
-//		case BUTTON::EXIT: {
-//			background.backgroundTransition(BACKGROUND::MENU, BACKGROUND::EXIT);
-//			quit = true;
-//			break;
-//		}
-//		default: {
-//			quit = event.quit();
-//		}
-//	}
-//}
-//
-//void changeMusicScreen (Window& screen, Background& background, Button& button, Event& event, vector<Music>& musicList, BUTTON& choose, int& musicChoose, bool& quit) {
-//	switch (choose) {
-//		case BUTTON::PLAY: {
-//			Mix_HaltMusic();
-//			background.backgroundTransition(BACKGROUND::CHOOSE_MUSIC, BACKGROUND::GAME);
-//			game(screen, background, button, event, musicList[musicChoose]);
-//		}
-//		case BUTTON::EXIT: {
-//			quit = true;
-//			background.backgroundTransition(BACKGROUND::CHOOSE_MUSIC, BACKGROUND::MENU);
-//			break;
-//		}
-//		default: {
-//			quit = event.quit() || event.pause();
-//			if (event.pause()) {
-//				background.backgroundTransition(BACKGROUND::CHOOSE_MUSIC, BACKGROUND::MENU);
-//			}
-//		}
-//	}
-//}
-
+void Score::free()
+{
+	cout << "Log [" << SDL_GetTicks() << "]: " << "Score freed successfully" << endl;
+	cout << endl;
+}
