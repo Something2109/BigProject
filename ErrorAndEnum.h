@@ -10,12 +10,21 @@
 #include <SDL_ttf.h>
 using namespace std;
 
+#define TOTAL_SETTING_BUTTON 8
+#define FPS 60.0
+#define TOTAL_BG_TRANSITION_FRAME 50.0
+#define MAX_NAME_LENGTH 15
 
 //enumerators
 
 enum class BACKGROUND {
+	INTRO1,
+	INTRO2,
+	INTRO3,
+	START,
 	MENU,
 	SETTING,
+	SCORE,
 	CHOOSE_MUSIC,
 	GAME,
 	EXIT,
@@ -34,19 +43,26 @@ enum class BUTTON {
 	CHANGE_SONG_RIGHT,
 	PLAY,
 	CONTINUE,
-	SAVE,
 	SETTING,
+	SCORE,
+	SAVE,
 	EXIT,
+	PRESS_KEY,
 	TOTAL,
-	NOT_CHOOSE = -1,
+	NOT_CHOOSE = 15,
 };
 
 enum class TITLE {
+	INTRO,
+	START,
 	MENU,
-	PAUSE,
-	FINISH,
 	SETTING,
+	SCORE,
+	CHOOSE_MUSIC,
+	GAME,
+	FINISH,
 	TOTAL,
+	NO_TITLE,
 };
 
 enum class CONTROL {
@@ -60,15 +76,8 @@ enum class CONTROL {
 	TOTAL_ARROW = 4,
 };
 
-enum class DOGE {
-	SOURCE_LEFT,
-	SOURCE_IDLE,
-	SOURCE_RIGHT,
-	DESTINATION,
-	TOTAL,
-};
-
 enum class POINT {
+	NAME,
 	POINT,
 	TOTAL_ARROW,
 	ACCURACY,

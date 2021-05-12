@@ -11,7 +11,7 @@ using namespace std;
 
 //this file contains functions to initiate and close SDL, renderer, window
 
-// function contain all the initiation function
+// initiation functions
 bool init(Window& screen, Event& event) {
 	bool success = true;
 	if (!initSDL()) {
@@ -19,15 +19,22 @@ bool init(Window& screen, Event& event) {
 		success = false;
 	}
 	else {
+		cout << "Log [" << SDL_GetTicks() << "]: " << "SDL initialized successfully" << endl;
+		cout << endl;
+
 		if (!initWindow(screen, event)) {
 			cout << "Log [" << SDL_GetTicks() << "]: " << "Failed to initialize Window" << endl;
 			success = false;
 		}
+		else {
+			cout << "Log [" << SDL_GetTicks() << "]: " << "Window initialized successfully" << endl;
+		}
 	}
+	cout << endl;
 	return success;
 }
 
-//SDL initiation function
+//SDL initiation
 bool initSDL()
 {
 	bool success = true;
@@ -36,7 +43,7 @@ bool initSDL()
 		success = false;
 	}
 	else {
-		cout << "SDL initiated successfully" << endl;
+		cout << "Log [" << SDL_GetTicks() << "]: " "SDL initiated successfully" << endl;
 		int imgFlags = IMG_INIT_PNG;
 		if (!(imgFlags & IMG_INIT_PNG))
 		{
@@ -44,21 +51,21 @@ bool initSDL()
 			success = false;
 		}
 		else {
-			cout << "SDL_Image initiated successfully" << endl;
+			cout << "Log [" << SDL_GetTicks() << "]: " "SDL_Image initiated successfully" << endl;
 			if (Mix_OpenAudio(22050, MIX_DEFAULT_FORMAT, 2, 10240) < 0)
 			{
 				loadErrorLog();
 				success = false;
 			}
 			else {
-				cout << "SDL_Mix initiated successfully" << endl;
+				cout << "Log [" << SDL_GetTicks() << "]: " "SDL_Mix initiated successfully" << endl;
 				if (TTF_Init() == -1)
 				{
 					loadErrorLog();
 					success = false;
 				}
 				else {
-					cout << "SDL_ttf initiated successfully" << endl;
+					cout << "Log [" << SDL_GetTicks() << "]: " "SDL_ttf initiated successfully" << endl;
 				}
 			}
 		}
@@ -66,17 +73,11 @@ bool initSDL()
 	return success;
 }
 
-//Window initiation function
+//Window initiation
 bool initWindow(Window& screen, Event& event) {
 	bool success = true;
 
-	if (!loadSettingFile(screen, event, "Resource")) {
-		screen.defaultScreenUnit();
-		
-	}
-	else {
-		event.loadDefaultSetting();
-	}
+	loadSettingFile(screen, event, "Resource");
 
 	if (!screen.createWindow()) {
 		success = false;
@@ -90,12 +91,16 @@ bool initWindow(Window& screen, Event& event) {
 	return success;
 }
 
-//close window and SDL function
-void closeWindow(Window& screen)
+//close window
+void closeWindow(Window& screen, Event& event)
 {
 	screen.free();
+	event.freeEventControl();
+	cout << "Log [" << SDL_GetTicks() << "]: " << "Window closed successfully" << endl;
+	cout << endl;
 }
 
+//close SDL
 void quitSDL() {
 	TTF_Quit();
 	cout << "SDL_ttf quit successfully" << endl;

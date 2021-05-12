@@ -17,25 +17,33 @@ using namespace std;
 
 class Screen : protected Window {
 protected:
-	Background* background = nullptr;
-	Button* button = nullptr;
-	Title* title = nullptr;
-	Event* event = nullptr;
-	ArrowTexture* arrow = nullptr;
-	DogeTexture* doge = nullptr;
-	MusicTexture* music = nullptr;
-	SettingTexture* setting = nullptr;
-	Point* point = nullptr;
+	Background* background;
+	Button* button;
+	Title* title;
+	Character* character;
+	Event* event;
 
-	bool quit = false;
-	BUTTON choose = BUTTON::NOT_CHOOSE;
+	SettingTexture* setting;
+	ArrowTexture* arrow;
+	MusicTexture* music;
+	Point* point;
+
+	TITLE titleType;
+	bool quit;
+	BUTTON choose;
 
 public:
 	Screen();
 
-	virtual bool load(const string& path) = 0;
+	Screen(Window& window);
 
 	virtual void pass(Screen* screen);
+
+	virtual void createRect();
+
+	virtual void windowHandle();
+
+	virtual bool load(const string& path) = 0;
 
 	virtual void run() = 0;
 
@@ -57,6 +65,10 @@ public:
 	void changeScreen();
 
 	void free();
+
+	void renderIntro();
+
+	void renderMenu();
 };
 
 class ChooseMusic : public Screen {
@@ -72,6 +84,9 @@ public:
 	void changeScreen();
 
 	void free();
+
+	//music info reading function
+	bool loadMusicFile(const string path);
 
 	void changeMusic();
 
@@ -97,12 +112,19 @@ public:
 
 	void free();
 
+	void renderGame();
+
 	void renderPause();
 
 	void renderScoreScreen();
+
+	void changePlayerName();
 };
 
 class Setting : public Screen {
+
+	bool settingChange;
+
 public:
 	Setting(Screen* screen);
 
@@ -114,27 +136,26 @@ public:
 
 	void free();
 
+	int eventHandle();
+
+	void changeKeyHandle();
+
 };
 
-//menu function
-void menu(Window& screen, Background& background, Event& event, vector<Music>& musicList);
+class Score : public Screen {
+	vector <Point> scoreList;
+	int scoreChoose;
+public:
+	Score(Screen* screen);
 
-void chooseMusic(Window& screen, Background& background, Button& button, Event& event, vector<Music>& musicList);
+	bool load(const string& path);
 
-//main game function
-void game(Window& screen, Background& background, Button& button, Event& event, Music& song);
+	void run();
 
-//loading resources
+	void changeScreen();
 
-bool loadingGameResource(Window& screen, ArrowTexture& texture, DogeTexture& dogeTexture, Music& song, Point& point);
+	void free();
 
-void freeGamesTexture(ArrowTexture& texture, DogeTexture& dogeTexture, Music& song, Point& point);
+};
 
-void changeSong(MusicTexture& song, Event& event, vector<Music>& musicList, BUTTON& choose,int& musicChoose);
-
-void changeGameScreen(Uint32& lastPauseTime, BUTTON& choose, bool& quit, bool& pause);
-
-void changeMenuScreen(Window& screen, Background& background, Button& button, Event& event, vector<Music>& musicList, BUTTON& choose,  bool& quit);
-
-void changeMusicScreen(Window& screen, Background& background, Button& button, Event& event, vector<Music>& musicList, BUTTON& choose, int& musicChoose, bool& quit);
 #endif
