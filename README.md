@@ -22,7 +22,7 @@ Mouse              - Navigation and press buttons
 
 
     **Button**
-*There are the buttons you should notice:
+There are the buttons you should notice:
 - Play: get you into the Choose Music screen to choose song to play
 - Setting: get you into the Setting screen to change the 6 basic keys
 - Score: get you to the the Score screen and display the high score (in development)
